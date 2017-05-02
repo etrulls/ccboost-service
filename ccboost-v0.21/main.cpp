@@ -805,7 +805,7 @@ retry:
 
             qDebug( "%s", split.getStringDescription().c_str() );
             qDebug("------->   Iter %.3d: Error: %f (%f / %f this iter)", i, overallErr, err, weakErr);
-			writeToLog("------->   Iter %.3d: Error: %f (%f / %f this iter)", i, overallErr, err, weakErr);
+            //writeToLog("------->   Iter %.3d: Error: %f (%f / %f this iter)", i, overallErr, err, weakErr);
 
             {
 				updateTime = learnerTimer.elapsed() - lastTime;
