@@ -29,10 +29,10 @@ if params.tag is None:
 dir_path = os.path.dirname(os.path.realpath(__file__))
 username = params.username
 tag = params.tag
-logPath = dir_path + "/../userLogs/"+username
+logPath = dir_path + "/../userLogs/" + username
 if not os.path.isdir(logPath):
     os.makedirs(logPath)
-logPath = logPath+"/log.txt"
+logPath = logPath + "/log.txt"
 # This is where we will write the progress log
 # logFile = open(logPath)
 # txt = logFile.read()
@@ -122,7 +122,7 @@ feats = [
 ]
 if is_train:
     # Open template
-    with open(dir_path+'/templates/train.cfg', 'r') as f:
+    with open(dir_path + '/templates/train.cfg', 'r') as f:
         template = f.read()
 
     # Replace variables
@@ -166,7 +166,7 @@ f.close()
 
 # Train model (if necessary) and get results
 print('CCBOOST Service :: Calling ccboost binary')
-cmd = dir_path+'/ccboost-v0.21/build/ccboost {}'.format(tmp_name)
+cmd = dir_path + '/ccboost-v0.21/build/ccboost {}'.format(tmp_name)
 print(cmd)
 os.system(cmd)
 
@@ -185,7 +185,4 @@ if is_train:
 # - Dilate and mirror data and labels (right now stack borders are bad), and prune it from the output
 # - Sanity-check the strings as we're running on the command line (remove ";", others?)
 # - Send log to server during processing (redirect output to /tmp file?)
-# - Actually not recompute the features if they exist
-# - We may want to return an error measure while training and maybe also testing (no labels loaded while testing, for now)
 # - Dilate ground truth on the fly to ignore pixels around annotations
-# - Ilastik: we return multiple channels. Do we want to visualize a binary output or binarize it on the fly with a given threshold?
