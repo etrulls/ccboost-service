@@ -5,16 +5,37 @@ from validate import Validator
 from utils import convert, compute_synapse_features
 import random
 import string
+import h5py
+
 
 # Command-line parameters
 parser = argparse.ArgumentParser(description='ccboost service')
 parser.add_argument('--train', type=str, help='Config file for training')
 parser.add_argument('--test', type=str, help='Config file for testing')
+parser.add_argument('--username', type=str, help='name of user who requested this data be processed')
+parser.add_argument('--tag', type=str, help='the tag of the data to be treated')
+
 params = parser.parse_args()
+username = params.username
 if params.train is None and params.test is None:
     raise RuntimeError('Must specify a config file')
 if params.train is not None and params.test is not None:
     raise RuntimeError('Please run separate instances for training and stand-alone testing')
+if params.username is None:
+    raise RuntimeError('Must specify a username')
+if params.tag is None:
+    raise RuntimeError('Must specify a tag')
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+username = params.username
+tag = params.tag
+logPath = dir_path + "/../userLogs/"+username
+if not os.path.isdir(logPath):
+    os.makedirs(logPath)
+logPath = logPath+"/log.txt"
+# This is where we will write the progress log
+# logFile = open(logPath)
+# txt = logFile.read()
 
 if params.train:
     is_train = True
@@ -25,10 +46,10 @@ else:
 
 # Config file
 if is_train:
-    config = ConfigObj(config_file, configspec='config/trainspec.cfg')
+    config = ConfigObj(config_file, configspec=dir_path + '/config/trainspec.cfg')
     print('CCBOOST Service :: config = {}'.format(config))
 else:
-    config = ConfigObj(config_file, configspec='config/testspec.cfg')
+    config = ConfigObj(config_file, configspec=dir_path + '/config/testspec.cfg')
 if not config:
     raise RuntimeError(
         'Could not load the configuration file: "{}"'.format(config_file))
@@ -41,9 +62,9 @@ if v is not True:
 
 # Create dataset folder
 root = config['root']
-if not os.path.isdir(root + '/runs'):
-    os.mkdir(root + '/runs')
-root += '/runs'
+if not os.path.isdir(root + '/runs/' + username):
+    os.mkdir(root + '/runs/' + username)
+root += '/runs/' + username
 if not os.path.isdir(root + '/' + config['dataset_name']):
     os.mkdir(root + '/' + config['dataset_name'])
 root += '/' + config['dataset_name']
@@ -60,9 +81,9 @@ folder_results = folder_dataset + '/results/' + config['model_name']
 
 # Create model folder
 root = config['root']
-if not os.path.isdir(root + '/models'):
-    os.mkdir(root + '/models')
-root += '/models'
+if not os.path.isdir(root + '/models/' + username):
+    os.mkdir(root + '/models/' + username)
+root += '/models/' + username
 if not os.path.isdir(root + '/' + config['model_name']):
     os.mkdir(root + '/' + config['model_name'])
 root += '/' + config['model_name']
@@ -70,6 +91,10 @@ folder_model = root
 
 # Convert from h5 to tif
 print('CCBOOST Service :: Converting data into TIFF')
+# Print to log
+file = open(logPath, "w")
+file.write("CCBOOST Service :: Converting data into TIFF")
+file.close()
 config['stack_tif'] = convert(config['stack'], 'tif')
 if is_train:
     config['labels_tif'] = convert(config['labels'], 'tif')
@@ -79,6 +104,9 @@ if is_train:
 
 # Compute features
 print('CCBOOST Service :: Computing features')
+file = open(logPath, "w")
+file.write("CCBOOST Service :: Computing features")
+file.close()
 compute_synapse_features(config['stack_tif'], folder_dataset + '/features')
 
 # Generate the configuration file to train the model
@@ -94,7 +122,7 @@ feats = [
 ]
 if is_train:
     # Open template
-    with open('templates/train.cfg', 'r') as f:
+    with open(dir_path+'/templates/train.cfg', 'r') as f:
         template = f.read()
 
     # Replace variables
@@ -138,7 +166,7 @@ f.close()
 
 # Train model (if necessary) and get results
 print('CCBOOST Service :: Calling ccboost binary')
-cmd = './ccboost-v0.21/build/ccboost {}'.format(tmp_name)
+cmd = dir_path+'/ccboost-v0.21/build/ccboost {}'.format(tmp_name)
 print(cmd)
 os.system(cmd)
 
