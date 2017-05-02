@@ -100,6 +100,14 @@ typedef unsigned char PixelType;
 #include "IntegralImage.h"
 #include "SynapseUtils.hxx"
 
+
+static void writeToLog(const char* s){
+     ofstream file;
+     file.open ("example.txt");
+     file << s;
+     file.close();
+}
+
 // sample M indeces from 0..(N-1)
 static void sampleWithoutReplacement( unsigned M, unsigned N, std::vector<unsigned> *idxs )
 {
@@ -797,6 +805,7 @@ retry:
 
             qDebug( "%s", split.getStringDescription().c_str() );
             qDebug("------->   Iter %.3d: Error: %f (%f / %f this iter)", i, overallErr, err, weakErr);
+			writeToLog("------->   Iter %.3d: Error: %f (%f / %f this iter)", i, overallErr, err, weakErr);
 
             {
 				updateTime = learnerTimer.elapsed() - lastTime;
