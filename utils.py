@@ -62,7 +62,7 @@ def convert(src, fmt, delete_after=False):
     return tgt
 
 
-def compute_synapse_features(data, output_folder):
+def compute_synapse_features(data, output_folder, force_recompute=False, verbose=False):
     '''
     Compute synapse features (hard-coded).
     '''
@@ -80,36 +80,76 @@ def compute_synapse_features(data, output_folder):
     if not os.path.isdir(output_folder):
         os.path.mkdir(output_folder)
 
-    s = '{}/{} {} 0.5 1.0 1.0 {}/stensor-s0.5-r1.0.nrrd 1'.format(bin_loc, eigOfST, data, output_folder)
-    print('Running: "{}"'.format(s))
-    os.system(s)
+    o = '{}/stensor-s0.5-r1.0.nrrd'.format(output_folder)
+    s = '{}/{} {} 0.5 1.0 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
+    if not os.path.isfile(o) or force_recompute:
+        if verbose:
+            print('Running: "{}"'.format(s))
+        os.system(s)
+    elif verbose:
+        print('Skipping: "{}"'.format(s))
 
-    s = '{}/{} {} 0.8 1.6 1.0 {}/stensor-s0.8-r1.6.nrrd 1'.format(bin_loc, eigOfST, data, output_folder)
-    print('Running: "{}"'.format(s))
-    os.system(s)
+    o = '{}/stensor-s0.8-r1.6.nrrd'.format(output_folder)
+    s = '{}/{} {} 0.8 1.6 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
+    if not os.path.isfile(o) or force_recompute:
+        if verbose:
+            print('Running: "{}"'.format(s))
+        os.system(s)
+    elif verbose:
+        print('Skipping: "{}"'.format(s))
 
-    s = '{}/{} {} 1.8 3.5 1.0 {}/stensor-s1.8-r3.5.nrrd 1'.format(bin_loc, eigOfST, data, output_folder)
-    print('Running: "{}"'.format(s))
-    os.system(s)
+    o = '{}/stensor-s1.8-r3.5.nrrd'.format(output_folder)
+    s = '{}/{} {} 1.8 3.5 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
+    if not os.path.isfile(o) or force_recompute:
+        if verbose:
+            print('Running: "{}"'.format(s))
+        os.system(s)
+    elif verbose:
+        print('Skipping: "{}"'.format(s))
 
-    s = '{}/{} {} 2.5 5.0 1.0 {}/stensor-s2.5-r5.0.nrrd 1'.format(bin_loc, eigOfST, data, output_folder)
-    print('Running: "{}"'.format(s))
-    os.system(s)
+    o = '{}/stensor-s2.5-r5.0.nrrd'.format(output_folder)
+    s = '{}/{} {} 2.5 5.0 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
+    if not os.path.isfile(o) or force_recompute:
+        if verbose:
+            print('Running: "{}"'.format(s))
+        os.system(s)
+    elif verbose:
+        print('Skipping: "{}"'.format(s))
 
-    s = '{}/{} {} 3.5 1.0 {}/hessOrient-s3.5-highestMag.nrrd 1'.format(bin_loc, singleEigVecHess, data, output_folder)
-    print('Running: "{}"'.format(s))
-    os.system(s)
+    o = '{}/hessOrient-s3.5-highestMag.nrrd'.format(output_folder)
+    s = '{}/{} {} 3.5 1.0 {} 1'.format(bin_loc, singleEigVecHess, data, o)
+    if not os.path.isfile(o) or force_recompute:
+        if verbose:
+            print('Running: "{}"'.format(s))
+        os.system(s)
+    elif verbose:
+        print('Skipping: "{}"'.format(s))
 
-    s = '{}/{} {} 3.5 1.0 {}/hessOrient-s3.5-allEigVecs.nrrd 1'.format(bin_loc, allEigVecHess, data, output_folder)
-    print('Running: "{}"'.format(s))
-    os.system(s)
+    o = '{}/hessOrient-s3.5-allEigVecs.nrrd'.format(output_folder)
+    s = '{}/{} {} 3.5 1.0 {} 1'.format(bin_loc, allEigVecHess, data, o)
+    if not os.path.isfile(o) or force_recompute:
+        if verbose:
+            print('Running: "{}"'.format(s))
+        os.system(s)
+    elif verbose:
+        print('Skipping: "{}"'.format(s))
 
-    s = '{}/{} {} {}/hessOrient-s3.5-allEigVecs.nrrd 3.5 1.0 {}/hessOrient-s3.5-repolarized.nrrd'.format(bin_loc, repolarizeOrient, data, output_folder, output_folder)
-    print('Running: "{}"'.format(s))
-    os.system(s)
+    o = '{}/hessOrient-s3.5-repolarized.nrrd'.format(output_folder)
+    s = '{}/{} {} {}/hessOrient-s3.5-allEigVecs.nrrd 3.5 1.0 {}'.format(bin_loc, repolarizeOrient, data, output_folder, o)
+    if not os.path.isfile(o) or force_recompute:
+        if verbose:
+            print('Running: "{}"'.format(s))
+        os.system(s)
+    elif verbose:
+        print('Skipping: "{}"'.format(s))
 
     for sigma in [1.0, 1.6, 3.5, 5.0]:
         str_sigma = '{0:.2f}'.format(sigma)
-        s = '{}/{} {} {} 1.0 {}/gradient-magnitude-s{}.nrrd'.format(bin_loc, gradBin, data, str_sigma, output_folder, str_sigma)
-        print('Running: "{}"'.format(s))
-        os.system(s)
+        o = '{}/gradient-magnitude-s{}.nrrd'.format(output_folder, str_sigma)
+        s = '{}/{} {} {} 1.0 {}'.format(bin_loc, gradBin, data, str_sigma, o)
+        if not os.path.isfile(o) or force_recompute:
+            if verbose:
+                print('Running: "{}"'.format(s))
+            os.system(s)
+        elif verbose:
+            print('Skipping: "{}"'.format(s))
