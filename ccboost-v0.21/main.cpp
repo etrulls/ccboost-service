@@ -1695,8 +1695,10 @@ int main(int argc, char **argv)
                 /*if ( gtData[i] == posLabel )
                     posIdxs[ svoxData[i] ]++;*/
 
+                //qDebug("Here");
                 if ( gtData[i] == negLabel )
-                    negIdxs[ svoxData[i] ]++;
+                  //std::cout << svoxData[i] << '-' << negIdxs[ svoxData[i] ]++ << std::endl;
+                  negIdxs[ svoxData[i] ]++;
             }
 
             // now go through each element in the map and check votings
