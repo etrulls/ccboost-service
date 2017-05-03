@@ -88,10 +88,6 @@ if not os.path.isdir(folder_model):
 
 # Convert from h5 to tif
 print('CCBOOST Service :: Converting data into TIFF')
-# Print to log
-file = open(logPath, "w")
-file.write("CCBOOST Service :: Converting data into TIFF")
-file.close()
 config['stack_tif'] = convert(config['stack'], 'tif')
 if is_train:
     config['labels_tif'] = convert(config['labels'], 'tif')
@@ -138,9 +134,6 @@ else:
 
 # Compute features
 print('CCBOOST Service :: Computing features')
-file = open(logPath, "w")
-file.write("CCBOOST Service :: Computing features")
-file.close()
 compute_synapse_features(
     stack,
     folder_features,
