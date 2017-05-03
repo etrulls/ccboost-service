@@ -101,13 +101,6 @@ typedef unsigned char PixelType;
 #include "SynapseUtils.hxx"
 
 
-static void writeToLog(const char* s){
-     ofstream file;
-     file.open ("example.txt");
-     file << s;
-     file.close();
-}
-
 // sample M indeces from 0..(N-1)
 static void sampleWithoutReplacement( unsigned M, unsigned N, std::vector<unsigned> *idxs )
 {
@@ -805,7 +798,6 @@ retry:
 
             qDebug( "%s", split.getStringDescription().c_str() );
             qDebug("------->   Iter %.3d: Error: %f (%f / %f this iter)", i, overallErr, err, weakErr);
-			writeToLog("------->   Iter %.3d: Error: %f (%f / %f this iter)", i, overallErr, err, weakErr);
 
             {
 				updateTime = learnerTimer.elapsed() - lastTime;
@@ -1695,8 +1687,10 @@ int main(int argc, char **argv)
                 /*if ( gtData[i] == posLabel )
                     posIdxs[ svoxData[i] ]++;*/
 
+                //qDebug("Here");
                 if ( gtData[i] == negLabel )
-                    negIdxs[ svoxData[i] ]++;
+                  //std::cout << svoxData[i] << '-' << negIdxs[ svoxData[i] ]++ << std::endl;
+                  negIdxs[ svoxData[i] ]++;
             }
 
             // now go through each element in the map and check votings
