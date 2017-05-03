@@ -66,7 +66,8 @@ def compute_synapse_features(data, output_folder):
     '''
     Compute synapse features (hard-coded).
     '''
-    bin_loc = './ccboost-v0.21/build'
+    bin_loc = dir_path = os.path.dirname(os.path.realpath(__file__))+"/ccboost-v0.21/build"
+    #bin_loc = './ccboost-v0.21/build'
     gaussBin = 'GaussianImageFilter'
     gradBin = 'GradientMagnitudeImageFilter'
     LoGBin = 'LoGImageFilter'
