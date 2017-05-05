@@ -5,7 +5,6 @@ from validate import Validator
 from utils import convert, compute_synapse_features
 import random
 import string
-import h5py
 import tifffile
 import numpy as np
 import nrrd
@@ -17,7 +16,6 @@ parser = argparse.ArgumentParser(description='ccboost service')
 parser.add_argument('--train', type=str, help='Config file for training')
 parser.add_argument('--test', type=str, help='Config file for testing')
 parser.add_argument('--username', type=str, help='Username')
-parser.add_argument('--tag', type=str, help='Data tag')
 parser.add_argument('--recompute', dest='recompute', default=False, action='store_true', help='Recompute CCboost features, even if cached')
 parser.add_argument('--dilate', type=int, default=0, help='Mirror data/labels (number of voxels)')
 
@@ -29,12 +27,9 @@ if params.train is not None and params.test is not None:
     raise RuntimeError('Please run separate instances for training and stand-alone testing')
 if params.username is None:
     raise RuntimeError('Must specify a username')
-if params.tag is None:
-    raise RuntimeError('Must specify a tag')
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 username = params.username
-tag = params.tag
 
 if params.train:
     is_train = True
@@ -51,7 +46,7 @@ else:
     config = ConfigObj(config_file, configspec=dir_path + '/config/testspec.cfg')
 if not config:
     raise RuntimeError(
-        'Could not load the configuration file: "{}"'.format(config_file))   #BUG1
+        'Could not load the configuration file: "{}"'.format(config_file))
 
 validator = Validator()
 v = config.validate(validator)
@@ -186,6 +181,13 @@ else:
 
     if template.find('VAR_') >= 0:
         raise RuntimeError('Some field was not filled in in the template? ' + template)
+
+
+
+
+
+
+
 
 tmp_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
 tmp_name = '/tmp/' + tmp_name
