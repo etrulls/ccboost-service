@@ -10,7 +10,6 @@ import numpy as np
 import nrrd
 
 
-
 # Command-line parameters
 parser = argparse.ArgumentParser(description='ccboost service')
 parser.add_argument('--train', type=str, help='Config file for training')
@@ -132,18 +131,26 @@ print('CCBOOST Service :: Computing features')
 compute_synapse_features(
     stack,
     folder_features,
-    force_recompute=params.recompute)
+    params.dilate,
+    force_recompute=params.recompute,
+    verbose=True)
+
+# Mirroring string
+if params.dilate > 0:
+    suffix = '-mirrored-{}'.format(params.dilate)
+else:
+    suffix = ''
 
 # Generate the configuration file to train the model
 feats = [
-    "gradient-magnitude-s1.00.nrrd",
-    "gradient-magnitude-s1.60.nrrd",
-    "gradient-magnitude-s3.50.nrrd",
-    "gradient-magnitude-s5.00.nrrd",
-    "stensor-s0.5-r1.0.nrrd",
-    "stensor-s0.8-r1.6.nrrd",
-    "stensor-s1.8-r3.5.nrrd",
-    "stensor-s2.5-r5.0.nrrd"
+    "gradient-magnitude-s1.00{}.nrrd".format(suffix),
+    "gradient-magnitude-s1.60{}.nrrd".format(suffix),
+    "gradient-magnitude-s3.50{}.nrrd".format(suffix),
+    "gradient-magnitude-s5.00{}.nrrd".format(suffix),
+    "stensor-s0.5-r1.0{}.nrrd".format(suffix),
+    "stensor-s0.8-r1.6{}.nrrd".format(suffix),
+    "stensor-s1.8-r3.5{}.nrrd".format(suffix),
+    "stensor-s2.5-r5.0{}.nrrd".format(suffix)
 ]
 if is_train:
     # Open template
@@ -155,7 +162,7 @@ if is_train:
     template = template.replace('VAR_OUTPUT_PREFIX', '"' + folder_results + '/out"')
     template = template.replace('VAR_DATA', '"' + stack + '"')
     template = template.replace('VAR_LABELS', '"' + labels + '"')
-    template = template.replace('VAR_ORIENTATION', '"' + folder_features + '/hessOrient-s3.5-repolarized.nrrd' + '"')
+    template = template.replace('VAR_ORIENTATION', '"' + folder_features + '/hessOrient-s3.5-repolarized{}.nrrd'.format(suffix) + '"')
     for i in range(len(feats)):
         feats[i] = '"' + folder_features + '/' + feats[i] + '"'
     feats_single = ', '.join(feats)
@@ -173,7 +180,7 @@ else:
     template = template.replace('VAR_OUTPUT_PREFIX', '"' + folder_results + '/out"')
     template = template.replace('VAR_MODEL', '"' + folder_model + '/stumps.cfg"')
     template = template.replace('VAR_DATA', '"' + stack + '"')
-    template = template.replace('VAR_ORIENTATION', '"' + folder_features + '/hessOrient-s3.5-repolarized.nrrd' + '"')
+    template = template.replace('VAR_ORIENTATION', '"' + folder_features + '/hessOrient-s3.5-repolarized{}.nrrd'.format(suffix) + '"')
     for i in range(len(feats)):
         feats[i] = '"' + folder_features + '/' + feats[i] + '"'
     feats_single = ', '.join(feats)
@@ -181,12 +188,6 @@ else:
 
     if template.find('VAR_') >= 0:
         raise RuntimeError('Some field was not filled in in the template? ' + template)
-
-
-
-
-
-
 
 
 tmp_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
