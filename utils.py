@@ -3,6 +3,8 @@ import h5py
 import os
 import nrrd
 import numpy as np
+from scipy import ndimage
+from skimage import morphology
 
 
 def convert(src, fmt, delete_after=False):
@@ -159,3 +161,31 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
             os.system(s)
         elif verbose:
             print('Skipping: "{}"'.format(s))
+
+
+def dilate_labels(data, ignore):
+    '''
+    Dilate labels to ignore boundaries.
+    Uses a filter size 'ignore' and connectivity-1, both inside and outside.
+    '''
+
+    if ignore == 0:
+        return data
+    else:
+        filt = ndimage.generate_binary_structure(2, ignore)
+
+        # Inner dilation
+        inner = np.zeros(data.shape).astype(np.uint8)
+        outer = np.zeros(data.shape).astype(np.uint8)
+        for i in range(data.shape[0]):
+            inner[i] = ndimage.binary_erosion(data[i] > 0, structure=filt, iterations=ignore)
+            outer[i] = ndimage.binary_dilation(data[i] > 0, structure=filt, iterations=ignore)
+        outer = outer - data
+        inner = data - inner
+
+        # Unite
+        d = (inner + outer).astype(np.uint8) * 128
+        data[d > 0] = d[d > 0]
+
+    return data
+

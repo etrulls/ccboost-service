@@ -2,7 +2,7 @@ import os
 import argparse
 from configobj import ConfigObj
 from validate import Validator
-from utils import convert, compute_synapse_features
+from utils import convert, compute_synapse_features, dilate_labels
 import random
 import string
 import tifffile
@@ -16,7 +16,8 @@ parser.add_argument('--train', type=str, help='Config file for training')
 parser.add_argument('--test', type=str, help='Config file for testing')
 parser.add_argument('--username', type=str, help='Username')
 parser.add_argument('--recompute', dest='recompute', default=False, action='store_true', help='Recompute CCboost features, even if cached')
-parser.add_argument('--dilate', type=int, default=0, help='Mirror data/labels (number of voxels)')
+# parser.add_argument('--mirror', type=int, default=0, help='Mirror data/labels (number of voxels)')
+# parser.add_argument('--ignore', type=int, default=0, help='Ignore pixels around annotations (number of voxels)')
 
 params = parser.parse_args()
 username = params.username
@@ -86,22 +87,22 @@ config['stack_tif'] = convert(config['stack'], 'tif')
 if is_train:
     config['labels_tif'] = convert(config['labels'], 'tif')
 
-# Dilate training stack and labels to avoid boundary issues
+# Mirror training stack and labels to avoid boundary issues
 # Will be deleted at the end of the run, but it should not be displayed to the user (h5 only)
-if params.dilate > 0:
+if config['mirror'] > 0:
     print('CCBOOST Service :: Dilating stacks and labels')
     print('CCBOOST Service :: Source data file: {}'.format(config['stack_tif']))
     s = config['stack_tif'].split('/')
     fn_file = s[-1]
     fn_base = '.'.join(fn_file.split('.')[0:-1])
     fn_ext = fn_file.split('.')[-1]
-    stack = '{}/{}-mirrored-{}.{}'.format(scratch, fn_base, params.dilate, fn_ext)
+    stack = '{}/{}-mirrored-{}.{}'.format(scratch, fn_base, config['mirror'], fn_ext)
     if os.path.isfile(stack):
         print('CCBOOST Service :: Skipping, exists: {}'.format(stack))
     else:
         print('CCBOOST Service :: Mirrored data file: {}'.format(stack))
         x = tifffile.imread(config['stack_tif'])
-        x = np.pad(x, params.dilate, 'reflect')
+        x = np.pad(x, config['mirror'], 'reflect')
         tifffile.imsave(stack, x)
         x = None
 
@@ -110,34 +111,46 @@ if params.dilate > 0:
         fn_file = s[-1]
         fn_base = '.'.join(fn_file.split('.')[0:-1])
         fn_ext = fn_file.split('.')[-1]
-        labels = '{}/{}-mirrored-{}.{}'.format(scratch, fn_base, params.dilate, fn_ext)
+        labels = '{}/{}-mirrored-{}.{}'.format(scratch, fn_base, config['mirror'], fn_ext)
         if os.path.isfile(labels):
             print('CCBOOST Service :: Skipping, exists: {}'.format(labels))
         else:
             print('CCBOOST Service :: Mirrored labels file: {}'.format(labels))
             x = tifffile.imread(config['labels_tif'])
-            x = np.pad(x, params.dilate, 'reflect')
+            x = np.pad(x, config['mirror'], 'reflect')
             tifffile.imsave(labels, x)
             x = None
 
-    from time import sleep
-    sleep(5)
-else:
-    stack = config['stack_tif']
-    labels = config['labels_tif']
+    # from time import sleep
+    # sleep(5)
+
+# Ignore pixels around annotations
+if is_train:
+    if config['ignore'] > 0:
+        s = labels.split('/')
+        fn_file = s[-1]
+        fn_base = '.'.join(fn_file.split('.')[0:-1])
+        fn_ext = fn_file.split('.')[-1]
+        o = '{}/{}-ignore-{}.{}'.format(scratch, fn_base, config['ignore'], fn_ext)
+        
+        x = tifffile.imread(labels)
+        x = dilate_labels(x, config['ignore'])
+        tifffile.imsave(o, x)
+
+        labels = o
 
 # Compute features
 print('CCBOOST Service :: Computing features')
 compute_synapse_features(
     stack,
     folder_features,
-    params.dilate,
+    config['mirror'],
     force_recompute=params.recompute,
     verbose=True)
 
 # Mirroring string
-if params.dilate > 0:
-    suffix = '-mirrored-{}'.format(params.dilate)
+if config['mirror']> 0:
+    suffix = '-mirrored-{}'.format(config['mirror'])
 else:
     suffix = ''
 
@@ -208,13 +221,13 @@ os.system(cmd)
 
 # Remove mirrored boundaries for training
 ccboost_res = folder_results + '/out-0-ab-max.nrrd'
-if params.dilate > 0:
+if config['mirror']> 0:
     print('CCBOOST Service :: Removing mirrored boundaries')
     print('CCBOOST Service :: File: {}'.format(ccboost_res))
     x, o = nrrd.read(ccboost_res)
-    x = x[params.dilate:-params.dilate,
-          params.dilate:-params.dilate,
-          params.dilate:-params.dilate
+    x = x[config['mirror']:-config['mirror'],
+          config['mirror']:-config['mirror'],
+          config['mirror']:-config['mirror']
           ]
     nrrd.write(ccboost_res, x, options=o)
 
@@ -244,4 +257,3 @@ if is_train:
 # TODO
 # - Sanity-check the strings as we're running on the command line (remove ";", others?)
 # - Send log to server during processing (redirect output to /tmp file?)
-# - Dilate ground truth on the fly to ignore pixels around annotations
