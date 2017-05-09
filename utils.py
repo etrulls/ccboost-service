@@ -172,7 +172,8 @@ def dilate_labels(data, ignore):
     if ignore == 0:
         return data
     else:
-        filt = ndimage.generate_binary_structure(2, ignore)
+        # 1: conn-4, 2: conn-8
+        filt = ndimage.generate_binary_structure(2, 1)
 
         # Inner dilation
         inner = np.zeros(data.shape).astype(np.uint8)
