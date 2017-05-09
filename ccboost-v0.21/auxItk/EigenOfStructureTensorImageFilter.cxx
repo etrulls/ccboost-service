@@ -101,12 +101,14 @@ typedef itk::SymmetricEigenAnalysisImageFilter2< HessianImageType, EigenValueIma
 
 using namespace std;
 
-#define showMsg(args...) \
-    do { \
-        printf("\x1b[32m" "\x1b[1m["); \
-        printf(args); \
-        printf("]\x1b[0m\n" ); \
-    } while(0)
+//#define showMsg(args...) \
+//    do { \
+//        printf("\x1b[32m" "\x1b[1m["); \
+//        printf(args); \
+//        printf("]\x1b[0m\n" ); \
+//    } while(0)
+
+#define showMsg(args...) {}
 
 int execute(float sigma, float rho, string imageName, string outputFile, bool sortByMagnitude, float zAnisotropyFactor)
 {
@@ -129,7 +131,7 @@ int execute(float sigma, float rho, string imageName, string outputFile, bool so
     ImageType::SpacingType spacing = inpImg->GetSpacing();
     spacing[2] *= zAnisotropyFactor;
     
-    std::cout << "Using spacing: " << spacing << ", anisotr factor = " << zAnisotropyFactor << std::endl;
+    //std::cout << "Using spacing: " << spacing << ", anisotr factor = " << zAnisotropyFactor << std::endl;
     inpImg->SetSpacing(spacing);
     
     
@@ -195,8 +197,8 @@ int main(int argc, char **argv)
     string outputFile(argv[5]);
     float zAnisotropyFactor = atof(argv[4]);
     const bool sortByMagnitude = atoi(argv[6]) != 0;
-	printf("Order by magnitude: %d\n", sortByMagnitude );
-	printf("Sigma: %f, Rho: %f\n", sigma, rho );
+	//printf("Order by magnitude: %d\n", sortByMagnitude );
+	//printf("Sigma: %f, Rho: %f\n", sigma, rho );
 
 	return execute(sigma, rho,  imageName, outputFile, sortByMagnitude, zAnisotropyFactor);
 }

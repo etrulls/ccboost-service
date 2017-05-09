@@ -146,7 +146,7 @@ compute_synapse_features(
     folder_features,
     config['mirror'],
     force_recompute=params.recompute,
-    verbose=True)
+    verbose=False)
 
 # Mirroring string
 if config['mirror']> 0:
@@ -213,7 +213,6 @@ f.close()
 # Train model (if necessary) and get results
 print('CCBOOST Service :: Calling ccboost binary')
 cmd = dir_path + '/ccboost-v0.21/build/ccboost {}'.format(tmp_name)
-print(cmd)
 os.system(cmd)
 
 # TODO we should really try to catch an error here...

@@ -107,7 +107,7 @@ static void	createSlicMapT( const Matrix3D<unsigned int> &mImg, const unsigned i
   unsigned int x,y,z;
   x = y = z = 0;
 
-  printf("Size: %d\n", (unsigned int) totalSz );
+  //printf("Size: %d\n", (unsigned int) totalSz );
 
   for (unsigned int i=0; i < totalSz; i++)
   {

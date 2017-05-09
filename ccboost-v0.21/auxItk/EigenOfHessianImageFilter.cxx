@@ -100,12 +100,14 @@ typedef itk::SymmetricEigenAnalysisImageFilter2< HessianImageType, EigenValueIma
 
 using namespace std;
 
-#define showMsg(args...) \
-    do { \
-        printf("\x1b[32m" "\x1b[1m["); \
-        printf(args); \
-        printf("]\x1b[0m\n" ); \
-    } while(0)
+//#define showMsg(args...) \
+//    do { \
+//        printf("\x1b[32m" "\x1b[1m["); \
+//        printf(args); \
+//        printf("]\x1b[0m\n" ); \
+//    } while(0)
+
+#define showMsg(args...) {}
 
 int execute(float sigma, string imageName, string outputFile, bool sortByMagnitude, float zAnisotropyFactor)
 {
@@ -126,7 +128,7 @@ int execute(float sigma, string imageName, string outputFile, bool sortByMagnitu
     ImageType::SpacingType spacing = inpImg->GetSpacing();
     spacing[2] *= zAnisotropyFactor;
     
-    std::cout << "Using spacing: " << spacing << ", anisotr factor = " << zAnisotropyFactor << std::endl;
+    //std::cout << "Using spacing: " << spacing << ", anisotr factor = " << zAnisotropyFactor << std::endl;
     inpImg->SetSpacing(spacing);
     
 
@@ -187,7 +189,7 @@ int main(int argc, char **argv)
     string imageName(argv[1]);
     
     const bool sortByMagnitude = atoi(argv[5]) != 0;
-	printf("Order by magnitude: %d\n", sortByMagnitude );
+	//printf("Order by magnitude: %d\n", sortByMagnitude );
 
     float sigma  = atof(argv[2]);
     float zAnisotropyFactor = atof(argv[3]);

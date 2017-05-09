@@ -17,7 +17,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #define qFatal(...) do { fprintf(stderr, "ERROR: "); fprintf (stderr, __VA_ARGS__); fprintf(stderr, "\n");  exit(-1); } while(0)
-#define qDebug(...) do { fprintf (stdout, __VA_ARGS__); fprintf(stdout, "\n"); fflush(stdout); } while(0)
+//#define qDebug(...) do { fprintf (stdout, __VA_ARGS__); fprintf(stdout, "\n"); fflush(stdout); } while(0)
+#define qDebug(...) {}
 
 #define USE_POLARITY 0
 
@@ -171,7 +172,7 @@ void computeRotationMatrices( const std::vector<FloatPoint3D> &svOrient, std::ve
         rotMatrices[i].col(1) = rotMatrices[i].col(2).cross( rotMatrices[i].col(0) );
 
         // debug output
-        if (true)
+        if (false)
         {
             if (i == 0)
             {
@@ -807,6 +808,15 @@ retry:
                 qDebug("Took: %.2f sec, Estimated left: %.2f hr",
                        elapsedTime,
                        (numIters - i) * elapsedTime / 3600.0);
+
+							// Summarize output
+							float t_est = (numIters - i) * elapsedTime;
+							int t_h = floor(t_est / 3600.);
+							t_est -= 3600. * t_h;
+							int t_m = floor(t_est / 60.);
+							t_est -= 60. * t_m;
+							int t_s = round(t_est);
+							printf("CCBOOST service :: Training: iter %d, estimated time left: %d:%02d:%02d\n", i, t_h, t_m, t_s);
             }
 
             /*if ( overallErr < mStopErr ) {
@@ -870,8 +880,8 @@ retry:
         try
         {
             cfg.writeFile(fName.c_str());
-            std::cout << "Stumps successfully written to: " << fName
-                 << std::endl;
+            //std::cout << "Stumps successfully written to: " << fName
+            //     << std::endl;
 
         }
         catch(const libconfig::FileIOException &fioex)
@@ -1557,7 +1567,7 @@ int main(int argc, char **argv)
         return(EXIT_FAILURE);
     }
 
-    cfgData.printInfo();
+    //cfgData.printInfo();
 
     bool useSingleSynapse = cfgData.useSynapses.size() != 0;
 
@@ -1598,8 +1608,8 @@ int main(int argc, char **argv)
     }
 
     /** --- TRAIN LOOP, only if stumps not provided and the user doesn't want them ***/
-    std::cout << "STUMPS PATH VAL: " << cfgData.savedStumpsPath << std::endl;
-    std::cout << "STUMPS TESTING VAL: " << cfgData.usedSavedStumpsPathOnlyForTesting << std::endl;
+    //std::cout << "STUMPS PATH VAL: " << cfgData.savedStumpsPath << std::endl;
+    //std::cout << "STUMPS TESTING VAL: " << cfgData.usedSavedStumpsPathOnlyForTesting << std::endl;
 		//exit(-1);
 
     if ( !cfgData.usedSavedStumpsPathOnlyForTesting )
@@ -2161,9 +2171,13 @@ int main(int argc, char **argv)
             clock_gettime( CLOCK_REALTIME, &ts1 );
             adaboost.predict( adaboost.getSampleIdxs(), trainedScoreFloat, trainCombo, true );
             clock_gettime( CLOCK_REALTIME, &ts2 );
-            printf("Takes: %f\n",
-              (float) ( 1.0*(1.0*ts2.tv_nsec - ts1.tv_nsec*1.0)*1e-9
-              + 1.0*ts2.tv_sec - 1.0*ts1.tv_sec ) );
+						//float t_p = (float) ( 1.0*(1.0*ts2.tv_nsec - ts1.tv_nsec*1.0)*1e-9 + 1.0*ts2.tv_sec - 1.0*ts1.tv_sec );
+						//int t_h = floor(t_p / 3600.);
+						//t_p -= 3600. * t_h;
+						//int t_m = floor(t_p / 60.);
+						//t_p -= 60. * t_m;
+						//int t_s = round(t_p);
+            //printf("CCboost service :: Prediction: %d:%02d:%02d\n", t_h, t_m, t_s);
 
             Eigen::ArrayXd trainedScore = trainedScoreFloat.cast<double>();
 
@@ -2274,7 +2288,14 @@ int main(int argc, char **argv)
                     TimerRT predTimer;
                     predTimer.Reset();
                     adaboost.predict( predSamples, score, testCombo, cfgData.outputPlattScaling );
-                    qDebug("Pred elapsed: %f", predTimer.elapsed());
+										float t_p = predTimer.elapsed();
+										int t_h = floor(t_p / 3600.);
+										t_p -= 3600. * t_h;
+										int t_m = floor(t_p / 60.);
+										t_p -= 60. * t_m;
+										int t_s = round(t_p);
+										printf("CCboost service :: Prediction: %d:%02d:%02d\n", t_h, t_m, t_s);
+                    //qDebug("Pred elapsed: %f", predTimer.elapsed());
 
                     if (cfgData.outputPlattScaling)
                         sigmoidPlatt.Apply( score, score );

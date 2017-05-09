@@ -189,7 +189,7 @@ struct HistogramMeanThresholdData
 				angleVec(0) = cos(phi)*sin(theta);
 				angleVec(1) = sin(phi)*sin(theta);
 				angleVec(2) = cos(theta);
-				std::cout << "Angvec: " << angleVec << std::endl;
+				//std::cout << "Angvec: " << angleVec << std::endl;
 				
 				for (unsigned ds=0; ds < distSteps; ds++)
 				{
@@ -1020,11 +1020,11 @@ public:
         //for (unsigned iPoseIdx = 0; iPoseIdx < mParams.possibleOffsets.cols(); iPoseIdx++ )
         {
             // show some progress
-            if ( (iPoseIdx % progressStep) == 1 )
-            {
-                printf("Progress: %.1f%%\r", iPoseIdx * 100.0 / numPosesToExplore);
-                fflush(stdout);
-            }
+            //if ( (iPoseIdx % progressStep) == 1 )
+            //{
+            //    printf("Progress: %.1f%%\r", iPoseIdx * 100.0 / numPosesToExplore);
+            //    fflush(stdout);
+            //}
 
             const unsigned poseIdx = poseIdxs[iPoseIdx];
 			            

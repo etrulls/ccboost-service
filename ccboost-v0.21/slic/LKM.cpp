@@ -1092,7 +1092,7 @@ void LKM::SaveLabels(
 
 	ofstream outfile;
 	string finalpath = path + filename;
-        printf("finalpath : %s\n", finalpath.c_str());
+        //printf("finalpath : %s\n", finalpath.c_str());
 	outfile.open(finalpath.c_str(), ios::binary);
 	for( int i = 0; i < sz; i++ )
 	{
@@ -1135,7 +1135,7 @@ void LKM::SaveLabels_Text(
 
 	ofstream outfile;
 	string finalpath = path + filename;
-        printf("finalpath : %s\n", finalpath.c_str());
+        //printf("finalpath : %s\n", finalpath.c_str());
 	outfile.open(finalpath.c_str());
 	//for( int i = 0; i < sz; i++ )
         int i = 0;
@@ -1352,7 +1352,7 @@ void LKM::DoSupervoxelSegmentationForGrayVolume(
 	
 	//--------------------------------------------------
         unsigned int memSize = sizeof(int)*depth + depth*sz*sizeof(sidType);
-        printf("[LKM] memory required to run supervoxel algorithm = %dMb\n", memSize/(1024*1024));
+        //printf("[LKM] memory required to run supervoxel algorithm = %dMb\n", memSize/(1024*1024));
 	klabels = new sidType*[depth];
         m_lvecvec = ubuffvec;
 	for( int d = 0; d < depth; d++ )

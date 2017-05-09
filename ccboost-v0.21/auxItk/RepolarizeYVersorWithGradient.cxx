@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   const float zAnisotropyFactor  = atof( argv[4] );
   const std::string  outputImgFile(argv[5]);
   
-  printf("Sigma: %f\n", sigma);
+  //printf("Sigma: %f\n", sigma);
  
   typedef itk::CovariantVector< ComponentType, 
 								Dimension  >      GradientPixelType;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
         InputImageType::SpacingType spacing = inpImg->GetSpacing();
         spacing[2] *= zAnisotropyFactor;
 
-        std::cout << "Using spacing: " << spacing << ", anisotr factor = " << zAnisotropyFactor << std::endl;
+        //std::cout << "Using spacing: " << spacing << ", anisotr factor = " << zAnisotropyFactor << std::endl;
         inpImg->SetSpacing(spacing);
     }
 
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
         VectorImageType::SpacingType spacing = eigVecImg->GetSpacing();
         spacing[2] *= zAnisotropyFactor;
 
-        std::cout << "Using spacing: " << spacing << ", anisotr factor = " << zAnisotropyFactor << std::endl;
+        //std::cout << "Using spacing: " << spacing << ", anisotr factor = " << zAnisotropyFactor << std::endl;
         eigVecImg->SetSpacing(spacing);
     }
   

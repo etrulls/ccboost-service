@@ -60,12 +60,14 @@ typedef itk::GradientMagnitudeRecursiveGaussianImageFilter<ImageType, OutputImag
 
 using namespace std;
 
-#define showMsg(args...) \
-    do { \
-        printf("\x1b[32m" "\x1b[1m["); \
-        printf(args); \
-        printf("]\x1b[0m\n" ); \
-    } while(0)
+//#define showMsg(args...) \
+//    do { \
+//        printf("\x1b[32m" "\x1b[1m["); \
+//        printf(args); \
+//        printf("]\x1b[0m\n" ); \
+//    } while(0)
+
+#define showMsg(args...) {}
 
 template < int Order, bool IncludeEven, bool IncludeOdd, bool Include0 >
 int execute(float sigma, string imageName, string outputFile, float zAnisotropyFactor)
@@ -82,7 +84,7 @@ int execute(float sigma, string imageName, string outputFile, float zAnisotropyF
     ImageType::SpacingType spacing = inpImg->GetSpacing();
     spacing[2] *= zAnisotropyFactor;
     
-    std::cout << "Using spacing: " << spacing << ", anisotr factor = " << zAnisotropyFactor << std::endl;
+    //std::cout << "Using spacing: " << spacing << ", anisotr factor = " << zAnisotropyFactor << std::endl;
     inpImg->SetSpacing(spacing);
 
 

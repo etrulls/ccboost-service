@@ -44,7 +44,7 @@ def convert(src, fmt, delete_after=False):
         f.close()
     elif curr_fmt == 'nrrd':
         x, opts = nrrd.read(src)
-        x = x.transpose((2,1,0))
+        x = x.transpose((2, 1, 0))
 
     # Convert
     if fmt == 'h5':
@@ -54,7 +54,7 @@ def convert(src, fmt, delete_after=False):
     elif fmt == 'tif':
         tifffile.imsave(tgt, x)
     elif fmt == 'nrrd':
-        nrrd.write(tgt, x.transpose((2,1,0)))
+        nrrd.write(tgt, x.transpose((2, 1, 0)))
 
     # Delete
     if delete_after:
@@ -88,76 +88,84 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
     if not os.path.isdir(output_folder):
         os.path.mkdir(output_folder)
 
+    print('CCBoost service :: Computing eigenvectors of the structure tensor...')
     o = '{}/stensor-s0.5-r1.0{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 0.5 1.0 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
     if not os.path.isfile(o) or force_recompute:
         if verbose:
-            print('Running: "{}"'.format(s))
+            print('Command: "{}"'.format(s))
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
 
+    print('CCBoost service :: Computing eigenvectors of the structure tensor...')
     o = '{}/stensor-s0.8-r1.6{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 0.8 1.6 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
     if not os.path.isfile(o) or force_recompute:
         if verbose:
-            print('Running: "{}"'.format(s))
+            print('Command: "{}"'.format(s))
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
 
+    print('CCBoost service :: Computing eigenvectors of the structure tensor...')
     o = '{}/stensor-s1.8-r3.5{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 1.8 3.5 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
     if not os.path.isfile(o) or force_recompute:
         if verbose:
-            print('Running: "{}"'.format(s))
+            print('Command: "{}"'.format(s))
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
 
+    print('CCBoost service :: Computing eigenvectors of the structure tensor...')
     o = '{}/stensor-s2.5-r5.0{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 2.5 5.0 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
     if not os.path.isfile(o) or force_recompute:
         if verbose:
-            print('Running: "{}"'.format(s))
+            print('Command: "{}"'.format(s))
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
 
+    print('CCBoost service :: Computing single eigenvector of Hessian...')
     o = '{}/hessOrient-s3.5-highestMag{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 3.5 1.0 {} 1'.format(bin_loc, singleEigVecHess, data, o)
     if not os.path.isfile(o) or force_recompute:
         if verbose:
-            print('Running: "{}"'.format(s))
+            print('Command: "{}"'.format(s))
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
 
+    print('CCBoost service :: Computing all eigenvectors of Hessian...')
     o = '{}/hessOrient-s3.5-allEigVecs{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 3.5 1.0 {} 1'.format(bin_loc, allEigVecHess, data, o)
     if not os.path.isfile(o) or force_recompute:
         if verbose:
-            print('Running: "{}"'.format(s))
+            print('Command: "{}"'.format(s))
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
 
+    print('CCBoost service :: Repolarizating orientation...')
     o = '{}/hessOrient-s3.5-repolarized{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} {}/hessOrient-s3.5-allEigVecs{}.nrrd 3.5 1.0 {}'.format(bin_loc, repolarizeOrient, data, output_folder, suffix, o)
     if not os.path.isfile(o) or force_recompute:
         if verbose:
-            print('Running: "{}"'.format(s))
+            print('Command: "{}"'.format(s))
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
 
     for sigma in [1.0, 1.6, 3.5, 5.0]:
+        print('CCBoost service :: Computing gradients...')
         str_sigma = '{0:.2f}'.format(sigma)
         o = '{}/gradient-magnitude-s{}{}.nrrd'.format(output_folder, str_sigma, suffix)
         s = '{}/{} {} {} 1.0 {}'.format(bin_loc, gradBin, data, str_sigma, o)
         if not os.path.isfile(o) or force_recompute:
             if verbose:
-                print('Running: "{}"'.format(s))
+                print('Command: "{}"'.format(s))
             os.system(s)
         elif verbose:
             print('Skipping: "{}"'.format(s))
