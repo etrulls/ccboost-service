@@ -83,16 +83,16 @@ if not os.path.isdir(folder_model):
 
 # Convert from h5 to tif
 print('CCBOOST Service :: Converting data into TIFF')
-config['stack_tif'] = convert(config['stack'], 'tif')
+stack = convert(config['stack'], 'tif')
 if is_train:
-    config['labels_tif'] = convert(config['labels'], 'tif')
+    labels = convert(config['labels'], 'tif')
 
 # Mirror training stack and labels to avoid boundary issues
 # Will be deleted at the end of the run, but it should not be displayed to the user (h5 only)
 if config['mirror'] > 0:
     print('CCBOOST Service :: Dilating stacks and labels')
-    print('CCBOOST Service :: Source data file: {}'.format(config['stack_tif']))
-    s = config['stack_tif'].split('/')
+    print('CCBOOST Service :: Source data file: {}'.format(stack))
+    s = stack.split('/')
     fn_file = s[-1]
     fn_base = '.'.join(fn_file.split('.')[0:-1])
     fn_ext = fn_file.split('.')[-1]
@@ -101,13 +101,13 @@ if config['mirror'] > 0:
         print('CCBOOST Service :: Skipping, exists: {}'.format(stack))
     else:
         print('CCBOOST Service :: Mirrored data file: {}'.format(stack))
-        x = tifffile.imread(config['stack_tif'])
+        x = tifffile.imread(stack)
         x = np.pad(x, config['mirror'], 'reflect')
         tifffile.imsave(stack, x)
         x = None
 
     if is_train:
-        s = config['labels_tif'].split('/')
+        s = labels.split('/')
         fn_file = s[-1]
         fn_base = '.'.join(fn_file.split('.')[0:-1])
         fn_ext = fn_file.split('.')[-1]
@@ -116,7 +116,7 @@ if config['mirror'] > 0:
             print('CCBOOST Service :: Skipping, exists: {}'.format(labels))
         else:
             print('CCBOOST Service :: Mirrored labels file: {}'.format(labels))
-            x = tifffile.imread(config['labels_tif'])
+            x = tifffile.imread(labels)
             x = np.pad(x, config['mirror'], 'reflect')
             tifffile.imsave(labels, x)
             x = None
