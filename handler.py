@@ -255,4 +255,5 @@ if is_train:
 
 # TODO
 # - Sanity-check the strings as we're running on the command line (remove ";", others?)
-# - Send log to server during processing (redirect output to /tmp file?)
+# - Mirroring/ignore with 3 labels?
+# - Reduce number of threads
