@@ -5,6 +5,7 @@ import nrrd
 import numpy as np
 from scipy import ndimage
 from skimage import morphology
+import sys
 
 
 def convert(src, fmt, delete_after=False):
@@ -13,7 +14,7 @@ def convert(src, fmt, delete_after=False):
     '''
 
     if not os.path.isfile(src):
-        raise RuntimeError('Source file does not exist')
+        raise RuntimeError('Source file does not exist: {}'.format(src))
 
     # Current format
     curr_fmt = src.split('.')[-1]
@@ -89,6 +90,7 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         os.path.mkdir(output_folder)
 
     print('CCBoost service :: Computing eigenvectors of the structure tensor...')
+    sys.stdout.flush()
     o = '{}/stensor-s0.5-r1.0{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 0.5 1.0 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
     if not os.path.isfile(o) or force_recompute:
@@ -97,8 +99,10 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
+    sys.stdout.flush()
 
     print('CCBoost service :: Computing eigenvectors of the structure tensor...')
+    sys.stdout.flush()
     o = '{}/stensor-s0.8-r1.6{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 0.8 1.6 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
     if not os.path.isfile(o) or force_recompute:
@@ -107,8 +111,10 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
+    sys.stdout.flush()
 
     print('CCBoost service :: Computing eigenvectors of the structure tensor...')
+    sys.stdout.flush()
     o = '{}/stensor-s1.8-r3.5{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 1.8 3.5 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
     if not os.path.isfile(o) or force_recompute:
@@ -117,8 +123,10 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
+    sys.stdout.flush()
 
     print('CCBoost service :: Computing eigenvectors of the structure tensor...')
+    sys.stdout.flush()
     o = '{}/stensor-s2.5-r5.0{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 2.5 5.0 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
     if not os.path.isfile(o) or force_recompute:
@@ -127,8 +135,10 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
+    sys.stdout.flush()
 
     print('CCBoost service :: Computing single eigenvector of Hessian...')
+    sys.stdout.flush()
     o = '{}/hessOrient-s3.5-highestMag{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 3.5 1.0 {} 1'.format(bin_loc, singleEigVecHess, data, o)
     if not os.path.isfile(o) or force_recompute:
@@ -137,8 +147,10 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
+    sys.stdout.flush()
 
     print('CCBoost service :: Computing all eigenvectors of Hessian...')
+    sys.stdout.flush()
     o = '{}/hessOrient-s3.5-allEigVecs{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 3.5 1.0 {} 1'.format(bin_loc, allEigVecHess, data, o)
     if not os.path.isfile(o) or force_recompute:
@@ -147,8 +159,10 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
+    sys.stdout.flush()
 
-    print('CCBoost service :: Repolarizating orientation...')
+    print('CCBoost service :: Repolarizing orientation...')
+    sys.stdout.flush()
     o = '{}/hessOrient-s3.5-repolarized{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} {}/hessOrient-s3.5-allEigVecs{}.nrrd 3.5 1.0 {}'.format(bin_loc, repolarizeOrient, data, output_folder, suffix, o)
     if not os.path.isfile(o) or force_recompute:
@@ -157,9 +171,11 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         os.system(s)
     elif verbose:
         print('Skipping: "{}"'.format(s))
+    sys.stdout.flush()
 
     for sigma in [1.0, 1.6, 3.5, 5.0]:
         print('CCBoost service :: Computing gradients...')
+        sys.stdout.flush()
         str_sigma = '{0:.2f}'.format(sigma)
         o = '{}/gradient-magnitude-s{}{}.nrrd'.format(output_folder, str_sigma, suffix)
         s = '{}/{} {} {} 1.0 {}'.format(bin_loc, gradBin, data, str_sigma, o)
@@ -169,6 +185,7 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
             os.system(s)
         elif verbose:
             print('Skipping: "{}"'.format(s))
+        sys.stdout.flush()
 
 
 def dilate_labels(data, ignore):
