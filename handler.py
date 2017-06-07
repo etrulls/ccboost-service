@@ -42,7 +42,7 @@ else:
 # Config file
 if is_train:
     config = ConfigObj(config_file, configspec=dir_path + '/config/trainspec.cfg')
-    print('CCBOOST Service :: config = {}'.format(config))
+    print('CCBOOST :: config = {}'.format(config))
     sys.stdout.flush()
 else:
     config = ConfigObj(config_file, configspec=dir_path + '/config/testspec.cfg')
@@ -84,7 +84,7 @@ if not os.path.isdir(folder_model):
 
 
 # Convert from h5 to tif
-print('CCBOOST Service :: Converting data into TIFF')
+print('CCBOOST :: Converting data into TIFF')
 sys.stdout.flush()
 stack = convert(config['stack'], 'tif')
 if is_train:
@@ -93,8 +93,8 @@ if is_train:
 # Mirror training stack and labels to avoid boundary issues
 # Will be deleted at the end of the run, but it should not be displayed to the user (h5 only)
 if config['mirror'] > 0:
-    print('CCBOOST Service :: Dilating stacks and labels')
-    print('CCBOOST Service :: Source data file: {}'.format(stack))
+    print('CCBOOST :: Dilating stacks and labels')
+    print('CCBOOST :: Source data file: {}'.format(stack))
     sys.stdout.flush()
     s = stack.split('/')
     fn_file = s[-1]
@@ -102,10 +102,10 @@ if config['mirror'] > 0:
     fn_ext = fn_file.split('.')[-1]
     stack = '{}/{}-mirrored-{}.{}'.format(scratch, fn_base, config['mirror'], fn_ext)
     if os.path.isfile(stack):
-        print('CCBOOST Service :: Skipping, exists: {}'.format(stack))
+        print('CCBOOST :: Skipping, exists: {}'.format(stack))
         sys.stdout.flush()
     else:
-        print('CCBOOST Service :: Mirrored data file: {}'.format(stack))
+        print('CCBOOST :: Mirrored data file: {}'.format(stack))
         sys.stdout.flush()
         x = tifffile.imread(stack)
         x = np.pad(x, config['mirror'], 'reflect')
@@ -119,10 +119,10 @@ if config['mirror'] > 0:
         fn_ext = fn_file.split('.')[-1]
         labels = '{}/{}-mirrored-{}.{}'.format(scratch, fn_base, config['mirror'], fn_ext)
         if os.path.isfile(labels):
-            print('CCBOOST Service :: Skipping, exists: {}'.format(labels))
+            print('CCBOOST :: Skipping, exists: {}'.format(labels))
             sys.stdout.flush()
         else:
-            print('CCBOOST Service :: Mirrored labels file: {}'.format(labels))
+            print('CCBOOST :: Mirrored labels file: {}'.format(labels))
             sys.stdout.flush()
             x = tifffile.imread(labels)
             x = np.pad(x, config['mirror'], 'reflect')
@@ -148,7 +148,7 @@ if is_train:
         labels = o
 
 # Compute features
-print('CCBOOST Service :: Computing features')
+print('CCBOOST :: Computing features')
 sys.stdout.flush()
 compute_synapse_features(
     stack,
@@ -214,14 +214,14 @@ else:
 
 tmp_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
 tmp_name = '/tmp/' + tmp_name
-print('CCBOOST Service :: Saving template to "{}"'.format(tmp_name))
+print('CCBOOST :: Saving template to "{}"'.format(tmp_name))
 sys.stdout.flush()
 f = open(tmp_name, 'w')
 f.write(template)
 f.close()
 
 # Train model (if necessary) and get results
-print('CCBOOST Service :: Calling ccboost binary')
+print('CCBOOST :: Calling ccboost binary')
 sys.stdout.flush()
 cmd = dir_path + '/ccboost-v0.21/build/ccboost {}'.format(tmp_name)
 os.system(cmd)
@@ -232,8 +232,8 @@ os.system(cmd)
 # Remove mirrored boundaries for training
 ccboost_res = folder_results + '/out-0-ab-max.nrrd'
 if config['mirror']> 0:
-    print('CCBOOST Service :: Removing mirrored boundaries')
-    print('CCBOOST Service :: File: {}'.format(ccboost_res))
+    print('CCBOOST :: Removing mirrored boundaries')
+    print('CCBOOST :: File: {}'.format(ccboost_res))
     sys.stdout.flush()
     x, o = nrrd.read(ccboost_res)
     x = x[config['mirror']:-config['mirror'],
@@ -245,7 +245,7 @@ if config['mirror']> 0:
 # Convert results to tif so we can see something, and h5 so we can get them back to the server
 r_tif = convert(ccboost_res, 'tif')
 r_h5 = convert(ccboost_res, 'h5')
-print('CCBOOST Service :: Results stored in h5 at "{}"'.format(r_h5))
+print('CCBOOST :: Results stored in h5 at "{}"'.format(r_h5))
 sys.stdout.flush()
 
 # Delete the tiff files after processing
@@ -255,7 +255,7 @@ sys.stdout.flush()
 if is_train:
     os.rename(folder_results + '/out-backupstumps.cfg', folder_model + '/backup-stumps.cfg')
     os.rename(folder_results + '/out-stumps.cfg', folder_model + '/stumps.cfg')
-    print('CCBOOST Service :: Trained models stored at "{}"'.format(folder_model))
+    print('CCBOOST :: Trained models stored at "{}"'.format(folder_model))
     sys.stdout.flush()
 
 # Clean up
