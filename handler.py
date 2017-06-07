@@ -193,7 +193,7 @@ if is_train:
         raise RuntimeError('Some field was not filled in in the template? ' + template)
 else:
     # Open template
-    with open('templates/test.cfg', 'r') as f:
+    with open(dir_path + '/templates/test.cfg', 'r') as f:
         template = f.read()
 
     # Replace variables
