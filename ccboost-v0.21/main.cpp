@@ -16,8 +16,10 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.         //
 //////////////////////////////////////////////////////////////////////////////////
 
-#define qFatal(...) do { fprintf(stderr, "ERROR: "); fprintf (stderr, __VA_ARGS__); fprintf(stderr, "\n");  exit(-1); } while(0)
-//#define qDebug(...) do { fprintf (stdout, __VA_ARGS__); fprintf(stdout, "\n"); fflush(stdout); } while(0)
+#include <sys/time.h>
+
+#define qFatal(...) do { struct timeval tv; struct tm *tm; gettimeofday(&tv, NULL); tm = localtime(&tv.tv_sec); printf("%02d:%02d:%02d ", tm->tm_hour, tm->tm_min, tm->tm_sec); fprintf(stdout, "ERROR: "); fprintf (stdout, __VA_ARGS__); fprintf(stdout, "\n"); fflush(stdout); exit(-1); } while(0)
+#define qPrint(...) do { struct timeval tv; struct tm *tm; gettimeofday(&tv, NULL); tm = localtime(&tv.tv_sec); printf("%02d:%02d:%02d ", tm->tm_hour, tm->tm_min, tm->tm_sec); fprintf (stdout, __VA_ARGS__); fprintf(stdout, "\n"); fflush(stdout); } while(0)
 #define qDebug(...) {}
 
 #define USE_POLARITY 0
@@ -37,7 +39,7 @@
 #define USE_AUTOCONTEXT 0
 
 #if USE_AUTOCONTEXT
-	#define USE_SPATIAL_BOOSTING 1
+#define USE_SPATIAL_BOOSTING 1
 #endif
 
 // if orientation is interpreted as a rotation matrix
@@ -81,7 +83,7 @@ inline const char * typeToString<double>()
 #include "TimerRT.h"
 
 #if USE_LOGLOSS
-	#include "LineSearch.h"
+#include "LineSearch.h"
 #endif
 
 #include "HistogramMeanThreshold.h"
@@ -102,7 +104,7 @@ typedef unsigned char PixelType;
 #include "SynapseUtils.hxx"
 
 
-// sample M indeces from 0..(N-1)
+// sample M indices from 0..(N-1)
 static void sampleWithoutReplacement( unsigned M, unsigned N, std::vector<unsigned> *idxs )
 {
     if (M > N)  M = N;
@@ -161,7 +163,8 @@ void computeRotationMatrices( const std::vector<FloatPoint3D> &svOrient, std::ve
         int minIdx;
         rotMatrices[i].col(2).array().abs().minCoeff(&minIdx);
 
-        Eigen::Vector3f tmpVec; tmpVec.setConstant(0);
+        Eigen::Vector3f tmpVec;
+        tmpVec.setConstant(0);
         tmpVec(minIdx) = 1;
 
         rotMatrices[i].col(0) = rotMatrices[i].col(2).cross( tmpVec );
@@ -209,14 +212,15 @@ struct SVCombo
 
     Matrix3D<PixelType> rawImage;
 
-    ~SVCombo() {
+    ~SVCombo()
+    {
         for (unsigned i=0; i < pixIntegralImages.size(); i++)
             delete pixIntegralImages[i];
     }
 
     void invertRotMatrices()
     {
-    #if USE_ALL_EIGVEC_FOR_ROTMATRICES
+#if USE_ALL_EIGVEC_FOR_ROTMATRICES
         // we want to keep y-direction, but invert z
         //      so we have to invert x and z only
         for (unsigned int i=0; i < rotMatrices.size(); i++)
@@ -224,16 +228,16 @@ struct SVCombo
             rotMatrices[i].col(0) = -rotMatrices[i].col(0);
             rotMatrices[i].col(2) = -rotMatrices[i].col(2);
         }
-    #else
+#else
         // invert and recompute
         for (unsigned int i=0; i < svCentroids.size(); i++)
         {
-                svOrient[i].x = -svOrient[i].x;
-                svOrient[i].y = -svOrient[i].y;
-                svOrient[i].z = -svOrient[i].z;
+            svOrient[i].x = -svOrient[i].x;
+            svOrient[i].y = -svOrient[i].y;
+            svOrient[i].z = -svOrient[i].z;
         }
         computeRotationMatrices( svOrient, rotMatrices );
-    #endif
+#endif
     }
 };
 
@@ -256,9 +260,9 @@ private:
 
     SampleIdxVector     mSampleIdx;
     SampleClassVector   mSampleClass;
-	
-	// if it will search for the threshold on all the data after each iter
-	bool mThresholdSearchOnWholeData;
+
+    // if it will search for the threshold on all the data after each iter
+    bool mThresholdSearchOnWholeData;
 
     // contains a value !=0 if the given idx in mSampleIdx belongs to the minority class
     // so that it will always be sampled for training the weak learners
@@ -278,70 +282,76 @@ private:
 
     unsigned int mRandSeed;
     std::vector<unsigned char>  mIsArtifNeg;
-    
+
     // will save while learning, as a backup
     unsigned mBackupSaveLearnedStumpsEvery;
-    
+
     // filename for backup stumps file
     std::string mBackupSavedLearnedStumpsFileName;
 
 public:
 
-	void setThresholdSearchOnWholeData( bool yes )
-	{
-		mThresholdSearchOnWholeData = yes;
-	}
-	
-	void setBackupLearnedStumpsFileName( const std::string &fname )
+    void setThresholdSearchOnWholeData( bool yes )
+    {
+        mThresholdSearchOnWholeData = yes;
+    }
+
+    void setBackupLearnedStumpsFileName( const std::string &fname )
     {
         mBackupSavedLearnedStumpsFileName = fname;
     }
-	
+
     AdaBoost()
     {
         mRandSeed = 1234;
-		mThresholdSearchOnWholeData = false;
+        mThresholdSearchOnWholeData = false;
         mBackupSaveLearnedStumpsEvery = 50;
     }
 
-        const WeightsType & getSampleWeights() const {
-                return mWeights;
-        }
+    const WeightsType & getSampleWeights() const
+    {
+        return mWeights;
+    }
 
-        const SampleIdxVector & getSampleIdxs() const {
-                return mSampleIdx;
-        }
+    const SampleIdxVector & getSampleIdxs() const
+    {
+        return mSampleIdx;
+    }
 
-        const SampleClassVector & getSampleClasses() const {
-                return mSampleClass;
-        }
+    const SampleClassVector & getSampleClasses() const
+    {
+        return mSampleClass;
+    }
 
-        const std::vector<unsigned char> &getMinorityClassIdxs() {
-                return mMinorityClassIdxs;
-        }
+    const std::vector<unsigned char> &getMinorityClassIdxs()
+    {
+        return mMinorityClassIdxs;
+    }
 
-        void reInit( const WeakLearnerParamType &wData )
+    void reInit( const WeakLearnerParamType &wData )
+    {
+        mWeakLearner = wData;
+    }
+
+    unsigned numTrainedStumps() const
+    {
+        return mSplitList.size();
+    }
+
+    // only keeps the first 'max' stumps, removes the others
+    void cropStumpsTo( unsigned max )
+    {
+        if ( max > mSplitList.size() )
+            qFatal("Wanted to crop %d when there are only %d stumps", (int)max, (int) mSplitList.size() );
+
+        const int toCrop = (int) mSplitList.size() - (int) max;
+
+        for (int i=0; i < toCrop; i++)
         {
-            mWeakLearner = wData;
+            mSplitList.pop_back();
+            mSplitWeightList.pop_back();
         }
-
-        unsigned numTrainedStumps() const {
-            return mSplitList.size();
-        }
-
-        // only keeps the first 'max' stumps, removes the others
-        void cropStumpsTo( unsigned max )
-        {
-            if ( max > mSplitList.size() )
-                qFatal("Wanted to crop %d when there are only %d stumps", (int)max, (int) mSplitList.size() );
-
-            const int toCrop = (int) mSplitList.size() - (int) max;
-
-            for (int i=0; i < toCrop; i++) {
-                mSplitList.pop_back();
-                mSplitWeightList.pop_back();
-            }
-        }
+    }
 
     void setReweightingSamplingRatio( unsigned ratio )
     {
@@ -350,8 +360,8 @@ public:
 
 
     void init( const WeakLearnerParamType &wData,
-              const SampleIdxVector &samples,
-              const SampleClassVector &sampleClasses )
+               const SampleIdxVector &samples,
+               const SampleClassVector &sampleClasses )
     {
         mWeakLearner = wData;
         mSampleIdx = samples;
@@ -392,7 +402,8 @@ public:
 
         std::vector<unsigned int>   alwaysIdxs;
         std::vector<unsigned int>   otherIdxs;
-        for (unsigned int i=0; i < mSampleIdx.size(); i++) {
+        for (unsigned int i=0; i < mSampleIdx.size(); i++)
+        {
             if ( mMinorityClassIdxs[i] == 0 )
                 otherIdxs.push_back(i);
             else
@@ -404,23 +415,27 @@ public:
 #if SAMPLE_HALF_BEFORE
         {
             std::vector<unsigned> sampOther, sampAlways, sampUnlab;
-            
+
             sampleWithoutReplacement( otherIdxs.size() / 2, otherIdxs.size(), &sampOther );
             sampleWithoutReplacement( alwaysIdxs.size() / 2, alwaysIdxs.size(), &sampAlways );
-            
-           
-            std::vector<unsigned> A = alwaysIdxs; alwaysIdxs.clear(); alwaysIdxs.resize( sampAlways.size() );
-            std::vector<unsigned> O = otherIdxs; otherIdxs.clear(); otherIdxs.resize( sampOther.size() );
-            
+
+
+            std::vector<unsigned> A = alwaysIdxs;
+            alwaysIdxs.clear();
+            alwaysIdxs.resize( sampAlways.size() );
+            std::vector<unsigned> O = otherIdxs;
+            otherIdxs.clear();
+            otherIdxs.resize( sampOther.size() );
+
             for (unsigned i=0; i < sampAlways.size(); i++)
                 alwaysIdxs[i] = A[ sampAlways[i] ];
-            
+
             for (unsigned i=0; i < sampOther.size(); i++)
                 otherIdxs[i] = O[ sampOther[i] ];
         }
 #endif
 
-        
+
         const unsigned int numAlways = alwaysIdxs.size();
         const unsigned int numOther = otherIdxs.size();
 
@@ -429,7 +444,8 @@ public:
         qDebug("Resampling minority class: [%d %d (%d)]", numAlways, numOtherToSample, samplingRatio);
 
         if (numOther < numOtherToSample)
-            qFatal("Num non-always assumed >= N * numAlwaysToSample!");
+            qFatal("Using sampling ratio %d with %d positive samples. Required negative examples: %d. Provided: %d", samplingRatio, numAlways, numOtherToSample, numOther);
+            //qFatal("Num non-always assumed >= N * numAlwaysToSample!");
 
         newSampleIdx.resize(numAlways + numOtherToSample);
         newSampleClass.resize(numAlways + numOtherToSample);
@@ -480,13 +496,14 @@ public:
             newSampleClass[numOtherToSample + i] = mSampleClass[z];
             isArtifNeg[numOtherToSample + i] = mIsArtifNeg[z];
 
-            if (newWeights != 0) {
+            if (newWeights != 0)
+            {
                 newWeights->coeffRef(numOtherToSample + i) = mWeights.coeff(z);
             }
         }
 
         *newWeights = (*newWeights) / (newWeights->sum());
-        
+
         if (newWeights != 0)
             qDebug("Max: %f / %f / %f / sum: %f", mWeights.maxCoeff(), newWeights->maxCoeff(), newWeights->minCoeff(), newWeights->sum() );
     }
@@ -503,7 +520,7 @@ public:
 
     static const unsigned mSpatBoostRecomputeEvery = 500;
 
-	// returns true if it re-computed, so that a new iteration begins
+    // returns true if it re-computed, so that a new iteration begins
     bool spatialBoostRecomputeII(SVCombo &svCombo, unsigned iterNumber)
     {
         const unsigned numSV = svCombo.SVox.numLabels();
@@ -541,7 +558,7 @@ public:
 
         // recompute II
         svCombo.pixIntegralImages.back()->compute( tempScoreImg );
-		return true;
+        return true;
     }
 
 #endif
@@ -558,20 +575,20 @@ public:
                 qFatal("Requested to relearn thresholds but numIter = %u and split num = %u", numIters, (unsigned int)mSplitList.size());
         }
 
-        qDebug("Begin learn, seed: %u", mRandSeed);
+        qPrint("Starting learning phase, seed: %u", mRandSeed);
 
         srand ( mRandSeed );
         mRandomSampler.reSeed( mRandSeed );
-	
-    #if USE_LOGLOSS
-		// we need to store the current prediction function value
-		WeightsType	curPrediction(N);
-		curPrediction.setZero();
-		
-		WeightsType labelVector(N);
-		for (unsigned i=0; i < N; i++)
-			labelVector.coeffRef(i) = (mSampleClass[i] == 1) ? 1 : (-1);
-    #endif
+
+#if USE_LOGLOSS
+        // we need to store the current prediction function value
+        WeightsType	curPrediction(N);
+        curPrediction.setZero();
+
+        WeightsType labelVector(N);
+        for (unsigned i=0; i < N; i++)
+            labelVector.coeffRef(i) = (mSampleClass[i] == 1) ? 1 : (-1);
+#endif
 
         // initialize weights
         mWeights.resize( N );
@@ -581,7 +598,7 @@ public:
         // normalize wrt num of samples
         if (true)
         {
-            qDebug("Normalizing weights..");
+            qPrint("Normalizing weights.");
             //count number of pos
             unsigned numPos = 0;
             unsigned numNeg = 0;
@@ -607,61 +624,61 @@ public:
         Eigen::ArrayXf  scoreSoFar;
 
         TimerRT learnerTimer;
-		double samplingTime, wlSearchTime, updateTime;
-		
-		const WeightsType initialWeights = mWeights;
+        double samplingTime, wlSearchTime, updateTime;
+
+        const WeightsType initialWeights = mWeights;
 
         for (unsigned int i=0; i < numIters; i++)
         {
             learnerTimer.Reset();
-			double lastTime = learnerTimer.elapsed();
+            double lastTime = learnerTimer.elapsed();
 
-            #if USE_SPATIAL_BOOSTING
-                qDebug("Evaluating scores for spatial boost..");
-                
-				const bool spatBoostHappened = spatialBoostRecomputeII( svCombo, i );
-				#if USE_AUTOCONTEXT
-					if (spatBoostHappened)
-					{
-						// need to reset scores, weights, etc
-						#if USE_LOGLOSS
-							curPrediction.setZero();
-						#endif
-							
-						mWeights = initialWeights;
-					}
-				#endif
-                
-				qDebug("End spatial boost");
-            #endif
+#if USE_SPATIAL_BOOSTING
+            qDebug("Evaluating scores for spatial boost");
+
+            const bool spatBoostHappened = spatialBoostRecomputeII( svCombo, i );
+#if USE_AUTOCONTEXT
+            if (spatBoostHappened)
+            {
+                // need to reset scores, weights, etc
+#if USE_LOGLOSS
+                curPrediction.setZero();
+#endif
+
+                mWeights = initialWeights;
+            }
+#endif
+
+            qDebug("End spatial boost");
+#endif
 
             // split
             WeightsType newWeights;
             SampleIdxVector newSampleIdx;
-			std::vector<unsigned> newSampleClass;
-			
+            std::vector<unsigned> newSampleClass;
+
             std::vector<unsigned char> newIsArtifNeg;
 
             resampleMinorityClass( newSampleIdx, newSampleClass, &newWeights, newIsArtifNeg );
 
-			samplingTime = learnerTimer.elapsed() - lastTime;
-			lastTime = samplingTime;
-			
+            samplingTime = learnerTimer.elapsed() - lastTime;
+            lastTime = samplingTime;
+
             SplitType split;
 
             AdaBoostErrorType weakErr = 0;
             if (!reLearnThresholds)
-                    weakErr = mWeakLearner.learn( newSampleIdx, newSampleClass, newWeights, split );
+                weakErr = mWeakLearner.learn( newSampleIdx, newSampleClass, newWeights, split );
             else
             {
-				weakErr = mWeakLearner.learn( newSampleIdx, newSampleClass, newWeights, split, &mSplitList[i] );
+                weakErr = mWeakLearner.learn( newSampleIdx, newSampleClass, newWeights, split, &mSplitList[i] );
             }
             /*AdaBoostErrorType weakErr = 0.1;
             split = SplitType( 16, 0.83, false, 162 );*/
             //split = SplitType( 1, 0.83, false, 162 );
-            
+
             wlSearchTime = learnerTimer.elapsed() - lastTime;
-			lastTime = wlSearchTime;
+            lastTime = wlSearchTime;
 
             //AdaBoostErrorType err = mWeakLearner.learn( mSampleIdx, mSampleClass, mWeights, split );
 #ifdef _OPENMP
@@ -680,65 +697,66 @@ retry:
                 }
             }
 
-            if ( err > 0.5 ) {
-                qDebug("Error > 0.5, breaking...(%f %f)", err, weakErr);
+            if ( err > 0.5 )
+            {
+                qDebug("Error > 0.5, breaking... (%f %f)", err, weakErr);
                 split.invertClassifier();
                 goto retry;
                 //break;
             }
-            
+
             // re-learn threshold?
             if (mThresholdSearchOnWholeData)
-			{
+            {
                 // get feature value (without thresholding)
-				Eigen::ArrayXf featVal( mSampleIdx.size() );
+                Eigen::ArrayXf featVal( mSampleIdx.size() );
                 split.template exportFeat< std::vector<unsigned>, Eigen::ArrayXf >( mSampleIdx, mWeakLearner.params(), featVal, 0 );
-                
+
                 // get best threshold / invert
                 typedef FeatureOperatorPrecomputedValues< Eigen::ArrayXf, WeightsType > FeatureOpType;
-                
+
                 bool inv;
                 IntegralImageType thr;
-                
+
                 err = findBestThreshold<FeatureOpType, false>( FeatureOpType( featVal, mWeights, mSampleClass, mSampleIdx ),
-                                         thr , inv );
+                        thr, inv );
                 qDebug("Prev thr/inv: %f %d", split.threshold(), split.invert());
                 split.setInvert( inv );
                 split.setThreshold(thr);
                 qDebug("New thr/inv: %f %d", split.threshold(), split.invert());
-                
+
                 // and re-predict (TODO; this can be avoided easily!)
                 split.template classify< std::vector<unsigned>, (int)(-1) > ( mSampleIdx,  mWeakLearner.params(), prediction );
-			}
-            
-            
-	#if USE_LOGLOSS
-	    // line search
-	    double alpha = 0;
-	    {
-            WeightsType predTemp = prediction.cast<double>();
-	      LineSearch<WeightsType, WeightsType>	LS( curPrediction, predTemp, labelVector, LogLoss, initialWeights );
-	      alpha = LS.run();
-	      
-	      //alpha *= 0.1; //shrinkage?
-	      
-	      // update current prediction
-	      curPrediction += alpha * predTemp;
-	      
-	      // set weights
-	      //mWeights = (-2 * curPrediction * labelVector).exp() / ( 1 + (-2 * curPrediction * labelVector).exp() );
-	      mWeights = ((-2 * curPrediction * labelVector).exp() * initialWeights) / ( 1 + (-2 * curPrediction * labelVector).exp() ).square();
-	    }
-	#endif
+            }
 
-	#if !USE_LOGLOSS
+
+#if USE_LOGLOSS
+            // line search
+            double alpha = 0;
+            {
+                WeightsType predTemp = prediction.cast<double>();
+                LineSearch<WeightsType, WeightsType>	LS( curPrediction, predTemp, labelVector, LogLoss, initialWeights );
+                alpha = LS.run();
+
+                //alpha *= 0.1; //shrinkage?
+
+                // update current prediction
+                curPrediction += alpha * predTemp;
+
+                // set weights
+                //mWeights = (-2 * curPrediction * labelVector).exp() / ( 1 + (-2 * curPrediction * labelVector).exp() );
+                mWeights = ((-2 * curPrediction * labelVector).exp() * initialWeights) / ( 1 + (-2 * curPrediction * labelVector).exp() ).square();
+            }
+#endif
+
+#if !USE_LOGLOSS
             double alpha = 0.5 * log( (1.0 - err) / err );
-            
+
             //alpha *= 0.1; //shrinkage?
-            
+
             if (reLearnThresholds)
                 alpha = mSplitWeightList[i];
-            
+
             double expPlus = exp( alpha );
             double expNeg = exp( -alpha );
 
@@ -750,25 +768,25 @@ retry:
                     mWeights.coeffRef(j) *= expPlus;
 
 
-                #if USE_MADABOOST
+#if USE_MADABOOST
+                if (mWeights.coeffRef(j) > origWeights.coeffRef(j))
+                    mWeights.coeffRef(j) = origWeights.coeffRef(j);
+#endif
+
+#if USE_MADABOOST_ARTIFNEG
+                if(mIsArtifNeg[j])
                     if (mWeights.coeffRef(j) > origWeights.coeffRef(j))
                         mWeights.coeffRef(j) = origWeights.coeffRef(j);
-                #endif
-
-                #if USE_MADABOOST_ARTIFNEG
-                    if(mIsArtifNeg[j])
-                        if (mWeights.coeffRef(j) > origWeights.coeffRef(j))
-                            mWeights.coeffRef(j) = origWeights.coeffRef(j);
-                #endif
+#endif
             }
-	#endif
+#endif
 
             // normalize
             double wSum = mWeights.sum();
             mWeights = mWeights / wSum;
-        #if USE_MADABOOST || USE_MADABOOST_ARTIFNEG
+#if USE_MADABOOST || USE_MADABOOST_ARTIFNEG
             origWeights = origWeights / wSum;
-        #endif
+#endif
 
             if (!reLearnThresholds)
             {
@@ -788,7 +806,8 @@ retry:
                 predictSingleStump( mSampleIdx, scoreSoFar, i, numThreads );
 
                 unsigned int errCount = 0;
-                for (unsigned int i=0; i < mSampleIdx.size(); i++) {
+                for (unsigned int i=0; i < mSampleIdx.size(); i++)
+                {
                     if ( scoreSoFar.coeff(i) > 0 && mSampleClass[i] == 0 )
                         errCount++;
                     if ( scoreSoFar.coeff(i) < 0 && mSampleClass[i] != 0 )
@@ -801,32 +820,33 @@ retry:
             qDebug("------->   Iter %.3d: Error: %f (%f / %f this iter)", i, overallErr, err, weakErr);
 
             {
-				updateTime = learnerTimer.elapsed() - lastTime;
-				qDebug("Detailed timing: %f\t%f\t%f", samplingTime, wlSearchTime, updateTime);
-				
+                updateTime = learnerTimer.elapsed() - lastTime;
+                qDebug("Detailed timing: %f\t%f\t%f", samplingTime, wlSearchTime, updateTime);
+
                 double elapsedTime = learnerTimer.elapsed();
                 qDebug("Took: %.2f sec, Estimated left: %.2f hr",
                        elapsedTime,
                        (numIters - i) * elapsedTime / 3600.0);
 
-							// Summarize output
-							float t_est = (numIters - i) * elapsedTime;
-							int t_h = floor(t_est / 3600.);
-							t_est -= 3600. * t_h;
-							int t_m = floor(t_est / 60.);
-							t_est -= 60. * t_m;
-							int t_s = round(t_est);
-							printf("CCBOOST service :: Training: iter %d, estimated time left: %d:%02d:%02d\n", i, t_h, t_m, t_s);
+                // Summarize output
+                float t_est = (numIters - i) * elapsedTime;
+                int t_h = floor(t_est / 3600.);
+                t_est -= 3600. * t_h;
+                int t_m = floor(t_est / 60.);
+                t_est -= 60. * t_m;
+                int t_s = round(t_est);
+                //if((i+1) % 10 == 0)
+                qPrint("Training: iter %d, est. left: %d:%02d:%02d", i, t_h, t_m, t_s);
             }
 
             /*if ( overallErr < mStopErr ) {
                 qDebug("Stopping error reached!");
                 break;
             }*/
-            
+
             if ((i % mBackupSaveLearnedStumpsEvery) == 1)
             {
-                qDebug("Saving backup stumps..");
+                qPrint("Saving backup stumps");
                 saveLearnedStumps( mBackupSavedLearnedStumpsFileName, 0, i + 1 );
             }
         }
@@ -843,13 +863,13 @@ retry:
     {
         if (mSplitList.size() == 0)
         {
-            qDebug("Warning: classifier not saved, nothing to save!");
+            qPrint("Warning: classifier not saved, nothing to save!");
             return false;
         }
-        
+
         if (mSplitList.size() < numStumpsToSave)
             numStumpsToSave = mSplitList.size();
-        
+
         if (numStumpsToSave == 0)
             numStumpsToSave = mSplitList.size();
 
@@ -871,7 +891,8 @@ retry:
         if( platt != 0)
         {
             platt->save( st );
-        } else
+        }
+        else
         {
             SigmoidFitterPlatt<double> blankPlatt;
             blankPlatt.save( st );
@@ -913,37 +934,38 @@ retry:
 
         platt.load( cfg.lookup("plattScaling") );
 
-        qDebug("----> LOADED %d stumps!", (int) mSplitList.size() );
+        qPrint("Loaded %d stumps", (int) mSplitList.size() );
 
         return true;
     }
-    
+
     // accumulates the single stump prediction in scoreAccum
     void predictSingleStump( const SampleIdxVector &samples, Eigen::ArrayXf  &scoreAccum, unsigned int stumpIdx, unsigned numThreads = 1  )
     {
-		if (stumpIdx >= mSplitList.size())
-			qFatal("Invalid stumpIdx");
-		
-                if (scoreAccum.rows() != (int)samples.size()) {
-			scoreAccum.resize( samples.size() );
-			scoreAccum.setConstant(0);
-		}
-		
-		std::vector<float> prediction( samples.size() );
-		Eigen::Map< Eigen::ArrayXf >  predEigen( prediction.data(), prediction.size() );
-		
-                mSplitList[stumpIdx].classify( samples, mWeakLearner.params(), prediction, numThreads );
-		
-		scoreAccum += mSplitWeightList[stumpIdx] * (predEigen * 2 - 1);
-	}
+        if (stumpIdx >= mSplitList.size())
+            qFatal("Invalid stumpIdx");
+
+        if (scoreAccum.rows() != (int)samples.size())
+        {
+            scoreAccum.resize( samples.size() );
+            scoreAccum.setConstant(0);
+        }
+
+        std::vector<float> prediction( samples.size() );
+        Eigen::Map< Eigen::ArrayXf >  predEigen( prediction.data(), prediction.size() );
+
+        mSplitList[stumpIdx].classify( samples, mWeakLearner.params(), prediction, numThreads );
+
+        scoreAccum += mSplitWeightList[stumpIdx] * (predEigen * 2 - 1);
+    }
 
     void printSplitInformation()
     {
         for (unsigned int i=0; i < mSplitList.size(); i++)
         {
             qDebug("Stump %.3d: %.3f %s",
-                    i,
-                    mSplitWeightList[i],
+                   i,
+                   mSplitWeightList[i],
                    mSplitList[i].getStringDescription().c_str());
         }
     }
@@ -957,44 +979,45 @@ retry:
 #endif
         for (unsigned int i=0; i < mSplitList.size(); i++)
         {
-    #if USE_SPATIAL_BOOSTING
+#if USE_SPATIAL_BOOSTING
             const bool spatBoostHappened = spatialBoostRecomputeII(svCombo, i);
-			#if USE_AUTOCONTEXT
-				if (spatBoostHappened)
-					score.setConstant(0);	//reset
-			#endif
-    #endif
+#if USE_AUTOCONTEXT
+            if (spatBoostHappened)
+                score.setConstant(0);	//reset
+#endif
+#endif
 
             Eigen::ArrayXf predEigen( samples.size() );
-        
+
             mSplitList[i].template classify<SampleIdxVector, -1>( samples, mWeakLearner.params(), predEigen );
 
-    #if USE_SPATIAL_BOOSTING == 0
+#if USE_SPATIAL_BOOSTING == 0
             #pragma omp critical
-    #endif
+#endif
             score += mSplitWeightList[i] * predEigen;
         }
-        
+
         //qDebug("Max / Min: %f  %f", score.maxCoeff(), score.minCoeff());
 
-        if (normalizePrediction) {
+        if (normalizePrediction)
+        {
             double Z = 0;
             for (unsigned i=0; i < mSplitWeightList.size(); i++)
-                    Z += mSplitWeightList[i];
+                Z += mSplitWeightList[i];
 
             score /= Z;
             //qDebug("Z: %f", Z);
             //qDebug("After Max / Min: %f  %f", score.maxCoeff(), score.minCoeff());
         }
     }
-    
+
     void exportFeatures( const SampleIdxVector &samples, Eigen::ArrayXXf &dest )
     {
-		dest.resize( samples.size(), mSplitList.size() );
-		for (unsigned int i=0; i < mSplitList.size(); i++)
-		{
-                         mSplitList[i].exportFeat( samples, mWeakLearner.params(), dest, i );
-		}
+        dest.resize( samples.size(), mSplitList.size() );
+        for (unsigned int i=0; i < mSplitList.size(); i++)
+        {
+            mSplitList[i].exportFeat( samples, mWeakLearner.params(), dest, i );
+        }
     }
 };
 
@@ -1008,8 +1031,9 @@ bool  LoadSVox( const std::string &volFileName, int step, int cubeness, SuperVox
     sprintf( fName, "%s-supervoxel-%d-%d.nrrd", volFileName.c_str(), step, cubeness );
 
     // try to load file
-    if (!svox.load( fName )) {
-        qDebug("Could not load SV cache");
+    if (!svox.load( fName ))
+    {
+        qPrint("Could not load SV cache");
         return false;
     }
 
@@ -1023,8 +1047,9 @@ bool SaveSVox( const std::string &volFileName, int step, int cubeness, const Sup
 
     sprintf( fName, "%s-supervoxel-%d-%d.nrrd", volFileName.c_str(), step, cubeness );
 
-    if (!svox.save( fName )) {
-        qDebug("Could not save SV cache");
+    if (!svox.save( fName ))
+    {
+        qPrint("Could not save SV cache");
         return false;
     }
 
@@ -1060,7 +1085,7 @@ void computeSvoxWindowStatistics( SVCombo &combo, const unsigned iiIdx, const Ma
     const int Vheight = rawData.height();
     const int Vdepth = rawData.depth();
 
-    qDebug("Computing mean and std dev with box size = %d", boxSize);
+    qPrint("Computing mean and std dev with box size = %d", boxSize);
 
     // reserve space
     combo.svoxWindowMean.push_back( std::vector<float>() );
@@ -1088,7 +1113,7 @@ void computeSvoxWindowStatistics( SVCombo &combo, const unsigned iiIdx, const Ma
         if ( y + boxSize >= Vheight)   y = Vheight - boxSize - 1;
         if ( z + boxSize >= Vdepth )   z = Vdepth - boxSize - 1;
 
-		// TODO: fix boxSize for each coord
+        // TODO: fix boxSize for each coord
         IntegralImageType mean = combo.pixIntegralImages[iiIdx]->centeredSumNormalized( x, y, z, boxSize, boxSize, boxSize, 0, 1 );
 
         IntegralImageType stdDev = sqrt( squaredII.centeredSumNormalized( x, y, z, boxSize, boxSize, boxSize, 0, 1 ) - mean*mean );
@@ -1117,16 +1142,16 @@ void computeSvoxWindowStatistics( SVCombo &combo, const unsigned iiIdx, const Ma
         Eigen::Map< Eigen::ArrayXf > meanArray( svoxWindowMean.data(), svoxWindowMean.size() );
         Eigen::Map< Eigen::ArrayXf > invStdArray( svoxWindowInvStd.data(), svoxWindowInvStd.size() );
 
-        qDebug("Mean range:   %f -> %f", meanArray.minCoeff(), meanArray.maxCoeff());
-        qDebug("InvStd range: %f -> %f", invStdArray.minCoeff(), invStdArray.maxCoeff());
+        qPrint("Mean range:   %f -> %f", meanArray.minCoeff(), meanArray.maxCoeff());
+        qPrint("InvStd range: %f -> %f", invStdArray.minCoeff(), invStdArray.maxCoeff());
     }
 }
 #endif
 
 void appendFeatures( const std::vector<std::string> &featFNameArray,
-                        const Matrix3D<unsigned char> &rawImage,
-                        std::vector< IntegralImage<IntegralImageType> * > &IIs,
-                        SVCombo &combo )
+                     const Matrix3D<unsigned char> &rawImage,
+                     std::vector< IntegralImage<IntegralImageType> * > &IIs,
+                     SVCombo &combo )
 {
     typedef itk::VectorImage<float, 3>  ItkVectorImageType;
 
@@ -1137,16 +1162,18 @@ void appendFeatures( const std::vector<std::string> &featFNameArray,
         const std::string &featFName = featFNameArray[fNameIdx];
 
         itk::ImageFileReader<ItkVectorImageType>::Pointer reader = itk::ImageFileReader<ItkVectorImageType>::New();
-        try {
+        try
+        {
             reader->SetFileName( featFName );
             reader->Update();
-        } catch(std::exception &e)
+        }
+        catch(std::exception &e)
         {
             qFatal("Exception!");
         }
 
-            /*if ( svCentroids.size() != SVox.numLabels() )
-                    qFatal("Centroids must == numlabels");*/
+        /*if ( svCentroids.size() != SVox.numLabels() )
+                qFatal("Centroids must == numlabels");*/
 
         ItkVectorImageType::Pointer img = reader->GetOutput();
 
@@ -1198,9 +1225,10 @@ void appendFeatures( const std::vector<std::string> &featFNameArray,
             // resize orig
             const unsigned prevN = IIs.size();
 
-            for (unsigned q=0; q < mComp; q++) {
+            for (unsigned q=0; q < mComp; q++)
+            {
                 IIs.push_back( thisIIs.at(q) );
-                qDebug("-- Appended %s to idx [%d,%d]", featFName.c_str(), prevN, prevN + mComp - 1);
+                qPrint("-- Appended %s to idx [%d,%d]", featFName.c_str(), prevN, prevN + mComp - 1);
 
 #if APPLY_PATCH_VARNORM
                 // this always stays the same, except squared for structure tensor
@@ -1237,6 +1265,7 @@ void computeSupervoxelCombo( const SetConfigData &cfgData,
                              int svStep, int svCubeness,
                              SVCombo &combo)
 {
+    qPrint("Computing supervoxel combo");
     SuperVoxeler<PixelType> &SVox = combo.SVox;
     std::vector<UIntPoint3D> &svCentroids = combo.svCentroids;
 
@@ -1244,36 +1273,38 @@ void computeSupervoxelCombo( const SetConfigData &cfgData,
 
     const std::string &volumeFileName = cfgData.rawVolume;
 
-    qDebug("Loading image %s", cfgData.rawVolume.c_str());
+    qPrint("Loading image file");
+    //qDebug("Loading image %s", cfgData.rawVolume.c_str());
     if (!rawImage.load( cfgData.rawVolume ))
-        qFatal("error loading volume: %s", cfgData.rawVolume.c_str());
+        qFatal("Error loading volume: %s", cfgData.rawVolume.c_str());
 
     if (!LoadSVox( volumeFileName, svStep, svCubeness, combo.SVox ))
     {
-        qDebug("Computing supervoxels %d/%d", svStep, svCubeness);
+        qPrint("Computing supervoxels %d-%d", svStep, svCubeness);
 
 
         const int svZStep = std::max( (int) ( svStep / cfgData.zAnisotropyFactor), 1 );
-        qDebug("SVox Step / zStep: %d, %d", svStep, svZStep);
-        
+        qPrint("SVox Step / zStep: %d, %d", svStep, svZStep);
+
         combo.SVox.apply( rawImage, svStep, svCubeness, svZStep );
 
         // save it
-        qDebug("Saving svox..");
+        qPrint("Saving supervoxels");
         SaveSVox( volumeFileName, svStep, svCubeness, SVox );
     }
 
-    qDebug("Centroids");
+    qPrint("Computing supervoxel centroids");
     /** Compute centroids **/
     svCentroids.resize( SVox.numLabels() );
-    for (unsigned int i=0; i < SVox.numLabels(); i++) {
+    for (unsigned int i=0; i < SVox.numLabels(); i++)
+    {
         UIntPoint3D pt;
         computeSVCenter( SVox.voxelToPixel()[i], &pt );
         svCentroids[i] = pt;
     }
 
     /** -------------------------------------- **/
-    qDebug("Computing II");
+    qPrint("Computing integral image");
     combo.pixIntegralImages.clear();
     combo.pixIntegralImages.push_back( new IntegralImage<IntegralImageType>() );
     combo.pixIntegralImages.back()->compute( combo.rawImage );
@@ -1288,11 +1319,10 @@ void computeSupervoxelCombo( const SetConfigData &cfgData,
     combo.svoxWindowInvStd.push_back( combo.svoxWindowInvStd[0] );
 #endif
 
-
     /** Get orientation **/
 #if !USE_ALL_EIGVEC_FOR_ROTMATRICES
     combo.svOrient.resize( SVox.numLabels() );
-    qDebug("Reading orientation image...");
+    qPrint("Reading orientation image");
     if (true)
     {
         typedef itk::VectorImage<float, 3>  ItkVectorImageType;
@@ -1330,7 +1360,8 @@ void computeSupervoxelCombo( const SetConfigData &cfgData,
         }
 
         //qDebug("Pix: %f %f %f", svOrient[10].x, svOrient[10].y, svOrient[10].z);
-    } else
+    }
+    else
     {
         for (unsigned int i=0; i < svCentroids.size(); i++)
         {
@@ -1340,11 +1371,11 @@ void computeSupervoxelCombo( const SetConfigData &cfgData,
         }
     }
 
-    qDebug("Computing rotation matrices");
+    qPrint("Computing rotation matrices");
     computeRotationMatrices( combo.svOrient, combo.rotMatrices );
 #else
     combo.rotMatrices.resize( SVox.numLabels() );
-    qDebug("Reading orientation image...");
+    qPrint("Reading orientation image");
 
     if (true)
     {
@@ -1396,9 +1427,9 @@ void computeSupervoxelCombo( const SetConfigData &cfgData,
             combo.rotMatrices[i].col(0) = combo.rotMatrices[i].col(1).cross( combo.rotMatrices[i].col(2) );
 
 
-            #if IGNORE_ORIENT_ESTIMATES
-                combo.rotMatrices[i].setIdentity();
-            #endif
+#if IGNORE_ORIENT_ESTIMATES
+            combo.rotMatrices[i].setIdentity();
+#endif
         }
 
         //qDebug("Pix: %f %f %f", svOrient[10].x, svOrient[10].y, svOrient[10].z);
@@ -1409,14 +1440,14 @@ void computeSupervoxelCombo( const SetConfigData &cfgData,
     const std::vector< std::string > &extraFeaturesFNames = cfgData.otherFeatures;
     //#pragma omp parallel for num_threads(3)  // just to speed up loading from HD => PROBLEM IS ORDER!
     {
-        qDebug("Appending features...");
+        qPrint("Appending features");
         appendFeatures( extraFeaturesFNames,
-                                        rawImage,
-                                        combo.pixIntegralImages,
-                                        combo );
+                        rawImage,
+                        combo.pixIntegralImages,
+                        combo );
     }
 #if APPLY_PATCH_VARNORM
-    qDebug("Num wnd mean/invStd: %d %d", (int)combo.svoxWindowMean.size(), (int)combo.svoxWindowInvStd.size());
+    qPrint("Num wnd mean/invStd: %d %d", (int)combo.svoxWindowMean.size(), (int)combo.svoxWindowInvStd.size());
 #endif
 
 #if USE_SPATIAL_BOOSTING
@@ -1430,6 +1461,7 @@ template<typename AdaBoostType>
 void saveTrainingWeights( const ConfigData &cfgData, const AdaBoostType &adaboost, const SVCombo &combo,
                           const std::vector<unsigned int>  &appendedPositivesAsNegativesIdx)
 {
+    qPrint("Saving weights");
     Matrix3D<float>     weightImg;
     weightImg.reallocSizeLike( combo.rawImage );
 
@@ -1486,15 +1518,17 @@ void saveTrainingWeights( const ConfigData &cfgData, const AdaBoostType &adaboos
 }
 
 int main(int argc, char **argv)
-{   
+{
+    qPrint("Welcome to CCBOOST");
+
     srand(1234);
 
     qDebug("Integral image type: %s", typeToString<IntegralImageType>());
-	if ( typeid( IntegralImageType ) != typeid(double) )
-	{
-		qDebug("\n\n---- Warning: double is the recommended type for IntegralImageType, "
-			   "using float may introduce undesirable artifacts\n\n");
-	}
+    if ( typeid( IntegralImageType ) != typeid(double) )
+    {
+        qPrint("Warning: 'double' is the recommended type for IntegralImageType, "
+               "using 'float' may introduce undesirable artifacts");
+    }
 
 #if 0
     IntegralImage<IntegralImageType>    ii;
@@ -1502,7 +1536,7 @@ int main(int argc, char **argv)
     test.realloc(1000,1000,700);
     for (unsigned i=0; i < test.numElem(); i++)
         test.data()[i] = rand() * 1.0 / RAND_MAX;
-        //test.data()[i] = 10;
+    //test.data()[i] = 10;
 
     ii.compute(test);
 
@@ -1518,26 +1552,26 @@ int main(int argc, char **argv)
     qDebug("II:   %f", ii.volumeSum( x1, x2, y1, y2, z1, z2 ) );
     //qDebug("II c: %f", ii.centeredSumNormalized( x1, y1, z1, 7 ) );
     qDebug("pix:  %d", test(x1,y1,z1));
-    
+
     unsigned t1,t2,t3;
     test.idxToCoord( test(x1,y1,z1), t1, t2, t3 );
     qDebug("Coord: %d %d %d\n", t1,t2,t3);
-    
+
     double sum = 0;
-    
+
     qDebug("Offset: %d\n", test.coordToIdx(x1,y1,z1) );
-    
+
     for (unsigned x=x1; x <= x2; x++)
-    for (unsigned y=y1; y <= y2; y++)
-    for (unsigned z=z1; z <= z2; z++)
-        sum += test(x,y,z);
+        for (unsigned y=y1; y <= y2; y++)
+            for (unsigned z=z1; z <= z2; z++)
+                sum += test(x,y,z);
     qDebug("Normal: %f", sum);
 
     return 0;
 #endif
 
     if (argc < 2)
-        qFatal("Wrong arguments, usage is:\n\t%s <configFile.cfg> <optional args>", argv[0]);
+        qFatal("Wrong arguments, usage is:\n$ %s <configFile.cfg> <optional args>", argv[0]);
 
     std::string extraConfigLines = "";
 
@@ -1551,19 +1585,19 @@ int main(int argc, char **argv)
     }
     catch(const libconfig::FileIOException &fioex)
     {
-        std::cerr << "I/O error while reading file." << std::endl;
+        std::cout << "I/O error while reading file." << std::endl;
         return(EXIT_FAILURE);
     }
     catch(const libconfig::ParseException &pex)
     {
-        std::cerr << "Configuration Parse error: " << pex.getFile() << ":" << pex.getLine()
+        std::cout << "Configuration Parse error: " << pex.getFile() << ":" << pex.getLine()
                   << " - " << pex.getError() << std::endl;
         return(EXIT_FAILURE);
     }
     catch(const libconfig::SettingNotFoundException &pex)
     {
 
-        std::cerr << "Setting not found: " << pex.getPath() << std::endl;
+        std::cout << "Setting not found: " << pex.getPath() << std::endl;
         return(EXIT_FAILURE);
     }
 
@@ -1601,20 +1635,20 @@ int main(int argc, char **argv)
         // see numStumps
         if (cfgData.numStumps != adaboost.numTrainedStumps())
         {
-            qDebug("Limiting stumps to the first %d", (int)cfgData.numStumps);
+            qPrint("Limiting stumps to the first %d", (int)cfgData.numStumps);
             adaboost.cropStumpsTo( cfgData.numStumps );
-            qDebug("--> Then got: %d stumps", (int) adaboost.numTrainedStumps());
+            qPrint("Got: %d stumps", (int) adaboost.numTrainedStumps());
         }
     }
 
     /** --- TRAIN LOOP, only if stumps not provided and the user doesn't want them ***/
     //std::cout << "STUMPS PATH VAL: " << cfgData.savedStumpsPath << std::endl;
     //std::cout << "STUMPS TESTING VAL: " << cfgData.usedSavedStumpsPathOnlyForTesting << std::endl;
-		//exit(-1);
+    //exit(-1);
 
     if ( !cfgData.usedSavedStumpsPathOnlyForTesting )
     {
-    qDebug("---------> BEGIN TEST!");
+        qPrint("STARTING TRAINING!");
         SVCombo trainCombo;
         computeSupervoxelCombo( cfgData.train, svStep, svCubeness, trainCombo );
 
@@ -1638,9 +1672,9 @@ int main(int argc, char **argv)
 
             double sum = 0;
             for (unsigned x=x1; x <= x2; x++)
-            for (unsigned y=y1; y <= y2; y++)
-            for (unsigned z=z1; z <= z2; z++)
-                sum += trainCombo.rawImage(x,y,z);
+                for (unsigned y=y1; y <= y2; y++)
+                    for (unsigned z=z1; z <= z2; z++)
+                        sum += trainCombo.rawImage(x,y,z);
             qDebug("Normal: %f", sum);
         }
 #endif
@@ -1650,7 +1684,7 @@ int main(int argc, char **argv)
         std::vector<UIntPoint3D> &svCentroids = trainCombo.svCentroids;
         std::vector<Eigen::Matrix3f> &rotMatrices = trainCombo.rotMatrices;
 
-        qDebug("Loading GT...");
+        qPrint("Loading GT");
         const PixelType posLabel = 255;
         const PixelType negLabel = 0;
 
@@ -1672,7 +1706,7 @@ int main(int argc, char **argv)
             structuringElement.CreateStructuringElement();
 
             typedef itk::BinaryErodeImageFilter< itk::Image<PixelType,3>, itk::Image<PixelType,3>, StructuringElementType>
-                        BinaryErodeImageFilterType;
+            BinaryErodeImageFilterType;
 
             BinaryErodeImageFilterType::Pointer erodeFilter = BinaryErodeImageFilterType::New();
             erodeFilter->SetInput( gtImage.asItkImage() );
@@ -1699,8 +1733,8 @@ int main(int argc, char **argv)
 
                 //qDebug("Here");
                 if ( gtData[i] == negLabel )
-                  //std::cout << svoxData[i] << '-' << negIdxs[ svoxData[i] ]++ << std::endl;
-                  negIdxs[ svoxData[i] ]++;
+                    //std::cout << svoxData[i] << '-' << negIdxs[ svoxData[i] ]++ << std::endl;
+                    negIdxs[ svoxData[i] ]++;
             }
 
             // now go through each element in the map and check votings
@@ -1743,11 +1777,11 @@ int main(int argc, char **argv)
                     // only process if it is the one we want
                     if ( useSingleSynapse )
                     {
-                       if ( std::find( cfgData.useSynapses.begin(), cfgData.useSynapses.end(), i+1 ) == cfgData.useSynapses.end() )
-                       {
-                           qDebug("Skipping synapse %d", i+1);
-                           continue;
-                       }
+                        if ( std::find( cfgData.useSynapses.begin(), cfgData.useSynapses.end(), i+1 ) == cfgData.useSynapses.end() )
+                        {
+                            qDebug("Skipping synapse %d", i+1);
+                            continue;
+                        }
                     }
 
                     std::map<unsigned int, unsigned int> mmap;
@@ -1769,7 +1803,7 @@ int main(int argc, char **argv)
                     if (SVList.size() == 0)
                         continue;
 
-                #if USE_POLARITY
+#if USE_POLARITY
                     // find to which polarity info in the cfg file this region belongs to
                     Eigen::Vector3f polarityVec;
                     {
@@ -1789,20 +1823,20 @@ int main(int argc, char **argv)
                             foundPolarityError = true;
                             qDebug("Error assigning polarity with config: %d, size %d, for CC at %d %d %d. SV %d ",
                                    (int) foundOnes.size(),
-								   (int) posIdxBags[i].size(),
+                                   (int) posIdxBags[i].size(),
                                    (int)svCentroids[SVList[ SVList.size() / 2 ]].x,
                                    (int) svCentroids[SVList[SVList.size() / 2]].y, (int)svCentroids[SVList[SVList.size() / 2]].z,
                                    SVList[SVList.size()/2] );
-							
-							if (foundOnes.size() != 0)
-							{
-								qDebug("Found ones:\n");
-								for (unsigned r=0; r < foundOnes.size(); r++)
-								{
-									const unsigned e = foundOnes[r];
-									qDebug("\t%d %d %d\n", cfgData.train.ccGTOrient[e].px, cfgData.train.ccGTOrient[e].py, cfgData.train.ccGTOrient[e].pz );
-								}
-							}
+
+                            if (foundOnes.size() != 0)
+                            {
+                                qDebug("Found ones:\n");
+                                for (unsigned r=0; r < foundOnes.size(); r++)
+                                {
+                                    const unsigned e = foundOnes[r];
+                                    qDebug("\t%d %d %d\n", cfgData.train.ccGTOrient[e].px, cfgData.train.ccGTOrient[e].py, cfgData.train.ccGTOrient[e].pz );
+                                }
+                            }
                             continue;
                         }
 
@@ -1824,7 +1858,8 @@ int main(int argc, char **argv)
 
                     // create matrix to know which ones to revert
                     Eigen::MatrixXf vecs( 3, SVList.size() );
-                    for (unsigned q=0; q < SVList.size(); q++) {
+                    for (unsigned q=0; q < SVList.size(); q++)
+                    {
                         vecs.col(q) = rotMatrices[ SVList[q] ].col(2);
                     }
 
@@ -1834,15 +1869,16 @@ int main(int argc, char **argv)
                     // set with same orient by inverting the ones with the 'wrong'  one
                     for (unsigned q=0; q < SVList.size(); q++)
                     {
-                        if ( dotP(q) < 0 ) {
+                        if ( dotP(q) < 0 )
+                        {
                             rotMatrices[ SVList[q] ].col(0) = -trainCombo.rotMatrices[ SVList[q] ].col(0);
                             rotMatrices[ SVList[q] ].col(2) = -trainCombo.rotMatrices[ SVList[q] ].col(2);
                         }
                     }
-                #else
+#else
                     const unsigned bfSVListIdx = SVList.size() / 2;
                     const double bfCost = 0.0;
-                #endif
+#endif
 
                     // show location as indicator
                     {
@@ -1865,171 +1901,172 @@ int main(int argc, char **argv)
                 }
 
                 if (foundPolarityError)
-                    qFatal("Breaking beacuse of polarity error, see above.");
+                    qFatal("Breaking because of polarity error, see above.");
             }
         }
 
         // remove the ones on the border
         {
-                    std::vector<unsigned int> newPosSV, newNegSV;
+            std::vector<unsigned int> newPosSV, newNegSV;
 
-                    const unsigned int minDist = cfgData.borderMinDist;
-                    
-                    // scale for z
-                    const unsigned int minDistZ = cfgData.borderMinDist / cfgData.train.zAnisotropyFactor;
-                    
-                    const unsigned int maxX = gtImage.width() - minDist;
-                    const unsigned int maxY = gtImage.height() - minDist;
-                    const unsigned int maxZ = gtImage.depth() - minDistZ;
+            const unsigned int minDist = cfgData.borderMinDist;
 
-                    for (unsigned i=0; i < posSVIdx.size(); i++)
-                    {
-                            if (svCentroids[ posSVIdx[i] ].x < minDist)	continue;
-                            if (svCentroids[ posSVIdx[i] ].y < minDist)	continue;
-                            if (svCentroids[ posSVIdx[i] ].z < minDistZ)	continue;
+            // scale for z
+            const unsigned int minDistZ = cfgData.borderMinDist / cfgData.train.zAnisotropyFactor;
 
-                            if (svCentroids[ posSVIdx[i] ].x > maxX)	continue;
-                            if (svCentroids[ posSVIdx[i] ].y > maxY)	continue;
-                            if (svCentroids[ posSVIdx[i] ].z > maxZ)	continue;
+            const unsigned int maxX = gtImage.width() - minDist;
+            const unsigned int maxY = gtImage.height() - minDist;
+            const unsigned int maxZ = gtImage.depth() - minDistZ;
 
-                            newPosSV.push_back( posSVIdx[i] );
-                    }
+            for (unsigned i=0; i < posSVIdx.size(); i++)
+            {
+                if (svCentroids[ posSVIdx[i] ].x < minDist)	continue;
+                if (svCentroids[ posSVIdx[i] ].y < minDist)	continue;
+                if (svCentroids[ posSVIdx[i] ].z < minDistZ)	continue;
 
-                    for (unsigned i=0; i < negSVIdx.size(); i++)
-                    {
-                            if (svCentroids[ negSVIdx[i] ].x < minDist)	continue;
-                            if (svCentroids[ negSVIdx[i] ].y < minDist)	continue;
-                            if (svCentroids[ negSVIdx[i] ].z < minDistZ)	continue;
+                if (svCentroids[ posSVIdx[i] ].x > maxX)	continue;
+                if (svCentroids[ posSVIdx[i] ].y > maxY)	continue;
+                if (svCentroids[ posSVIdx[i] ].z > maxZ)	continue;
 
-                            if (svCentroids[ negSVIdx[i] ].x > maxX)	continue;
-                            if (svCentroids[ negSVIdx[i] ].y > maxY)	continue;
-                            if (svCentroids[ negSVIdx[i] ].z > maxZ)	continue;
-
-                            newNegSV.push_back( negSVIdx[i] );
-                    }
-
-                    posSVIdx = newPosSV;
-                    negSVIdx = newNegSV;
+                newPosSV.push_back( posSVIdx[i] );
             }
 
-            // resample negSVIdx according to proportion
+            for (unsigned i=0; i < negSVIdx.size(); i++)
             {
-                double p = cfgData.getKeyValue<double>( std::string("NegSampleProportion") );
+                if (svCentroids[ negSVIdx[i] ].x < minDist)	continue;
+                if (svCentroids[ negSVIdx[i] ].y < minDist)	continue;
+                if (svCentroids[ negSVIdx[i] ].z < minDistZ)	continue;
 
-                if (p != 0.0)
+                if (svCentroids[ negSVIdx[i] ].x > maxX)	continue;
+                if (svCentroids[ negSVIdx[i] ].y > maxY)	continue;
+                if (svCentroids[ negSVIdx[i] ].z > maxZ)	continue;
+
+                newNegSV.push_back( negSVIdx[i] );
+            }
+
+            posSVIdx = newPosSV;
+            negSVIdx = newNegSV;
+        }
+
+        // resample negSVIdx according to proportion
+        {
+            double p = cfgData.getKeyValue<double>( std::string("NegSampleProportion") );
+
+            if (p != 0.0)
+            {
+                qPrint("Resampling negative class!!");
+                unsigned nn = p * posSVIdx.size() + 0.5;
+
+                std::vector<unsigned int> newIdxs;
+                sampleWithoutReplacement( nn, negSVIdx.size(), &newIdxs );
+
+                std::vector<unsigned int> oldSVNeg = negSVIdx;
+                negSVIdx.clear();
+
+                for (unsigned i=0; i < newIdxs.size(); i++)
+                    negSVIdx.push_back( oldSVNeg[ newIdxs[i] ] );
+            }
+            else
+                qPrint("Using ALL negative-labeled supervoxels");
+        }
+
+        // resample posSVIdx according to proportion
+        {
+            unsigned p = cfgData.getKeyValue<int>( std::string("PosSkipFactor") );
+
+            if (p != 0)
+            {
+                qPrint("Resampling POSITIVE class!!");
+                unsigned nn = p * posSVIdx.size() + 0.5;
+
+                std::vector<unsigned> newIdxs;
+
+                for (unsigned q=0; q < posSVIdx.size(); q += p)
+                    newIdxs.push_back( posSVIdx[q] );
+
+                posSVIdx = newIdxs;
+            }
+            else
+                qPrint("Using ALL negative-labeled supervoxels");
+        }
+
+
+        // take out 1 out of 3
+        if(false)
+        {
+            qDebug("------> WARNING: sampling 1 out of 3!");
+            std::random_shuffle(posSVIdx.begin(), posSVIdx.end());
+
+            posSVIdx.erase( posSVIdx.begin() + 2*(posSVIdx.size())/3, posSVIdx.end() );
+
+
+            std::random_shuffle(negSVIdx.begin(), negSVIdx.end());
+
+            negSVIdx.erase( negSVIdx.begin() + (2*negSVIdx.size())/3, negSVIdx.end() );
+        }
+
+        qPrint("GT Pos SV: %d", (int)posSVIdx.size());
+        qPrint("GT Neg SV: %d", (int)negSVIdx.size());
+
+        if ( (posSVIdx.size() == 0) || (negSVIdx.size() == 0) )
+            qFatal("Not enough ground truth!");
+
+        // shuffle all orientations from negatives
+        for (unsigned q=0; q < negSVIdx.size(); q += 2)
+        {
+            unsigned idx = negSVIdx[q];
+            rotMatrices[idx].col(0) = -rotMatrices[idx].col(0);
+            rotMatrices[idx].col(2) = -rotMatrices[idx].col(2);
+        }
+
+
+        const bool appendPositivesAsNegatives = cfgData.appendArtificialNegatives;
+        std::vector<unsigned int>  appendedPositivesAsNegativesIdx;
+        if (appendPositivesAsNegatives)
+        {
+            qPrint("Appending positives as negatives");
+            const unsigned int kMax = 1;
+
+            const unsigned int prevRows = trainCombo.SVox.numLabels();
+            /*
+            histMatrix.conservativeResize( histMatrix.rows() + kMax * posSVIdx.size(), histMatrix.cols() );*/
+
+            unsigned int ii = prevRows;
+            for (unsigned K=0; K < kMax; K++)
+            {
+                for (unsigned i=0; i < posSVIdx.size(); i++)
                 {
-                    qDebug("Resampling negative class!!");
-                    unsigned nn = p * posSVIdx.size() + 0.5;
+                    unsigned prevSVIdx = posSVIdx[i];
 
-                    std::vector<unsigned int> newIdxs;
-                    sampleWithoutReplacement( nn, negSVIdx.size(), &newIdxs );
+                    unsigned newSVIdx = ii++;
 
-                    std::vector<unsigned int> oldSVNeg = negSVIdx;
-                    negSVIdx.clear();
+                    negSVIdx.push_back( newSVIdx );
+                    svCentroids.push_back( svCentroids[ prevSVIdx ] );
 
-                    for (unsigned i=0; i < newIdxs.size(); i++)
-                        negSVIdx.push_back( oldSVNeg[ newIdxs[i] ] );
-                }
-                else
-                    qDebug("Using ALL negative-labeled supervoxels");
-            }
-            
-            // resample posSVIdx according to proportion
-            {
-                unsigned p = cfgData.getKeyValue<int>( std::string("PosSkipFactor") );
+                    rotMatrices.push_back( -rotMatrices[ prevSVIdx ] );
 
-                if (p != 0)
-                {
-                    qDebug("Resampling POSITIVE class!!");
-                    unsigned nn = p * posSVIdx.size() + 0.5;
+                    //histMatrix.row( newSVIdx ) = histMatrix.row( prevSVIdx );
 
-                    std::vector<unsigned> newIdxs;
-                    
-                    for (unsigned q=0; q < posSVIdx.size(); q += p)
-                        newIdxs.push_back( posSVIdx[q] );
-                    
-                    posSVIdx = newIdxs;
-                }
-                else
-                    qDebug("Using ALL negative-labeled supervoxels");
-            }
+                    appendedPositivesAsNegativesIdx.push_back( newSVIdx );
 
-
-            // take out 1 out of 3
-            if(false)
-            {
-                qDebug("------> WARNING: sampling 1 out of 3!");
-                std::random_shuffle(posSVIdx.begin(), posSVIdx.end());
-
-                posSVIdx.erase( posSVIdx.begin() + 2*(posSVIdx.size())/3, posSVIdx.end() );
-                
-                
-                std::random_shuffle(negSVIdx.begin(), negSVIdx.end());
-
-                negSVIdx.erase( negSVIdx.begin() + (2*negSVIdx.size())/3, negSVIdx.end() );
-            }
-
-            qDebug("GT Pos SV: %d", (int)posSVIdx.size());
-            qDebug("GT Neg SV: %d", (int)negSVIdx.size());
-
-            if ( (posSVIdx.size() == 0) || (negSVIdx.size() == 0) )
-                qFatal("Not enough ground truth!");
-
-            // shuffle all orientations from negatives
-            for (unsigned q=0; q < negSVIdx.size(); q += 2)
-            {
-                unsigned idx = negSVIdx[q];
-                rotMatrices[idx].col(0) = -rotMatrices[idx].col(0);
-                rotMatrices[idx].col(2) = -rotMatrices[idx].col(2);
-            }
-
-
-            const bool appendPositivesAsNegatives = cfgData.appendArtificialNegatives;
-            std::vector<unsigned int>  appendedPositivesAsNegativesIdx;
-            if (appendPositivesAsNegatives)
-            {
-                    qDebug("Appending positives as negatives");
-                    const unsigned int kMax = 1;
-
-                    const unsigned int prevRows = trainCombo.SVox.numLabels();
-                      /*
-                    histMatrix.conservativeResize( histMatrix.rows() + kMax * posSVIdx.size(), histMatrix.cols() );*/
-
-                    unsigned int ii = prevRows;
-                    for (unsigned K=0; K < kMax; K++)
+                    // also duplicate std dev / mean
+#if APPLY_PATCH_VARNORM
+                    for (unsigned q=0; q < trainCombo.svoxWindowMean.size(); q++)
                     {
-                            for (unsigned i=0; i < posSVIdx.size(); i++)
-                            {
-                                    unsigned prevSVIdx = posSVIdx[i];
-
-                                    unsigned newSVIdx = ii++;
-
-                                    negSVIdx.push_back( newSVIdx );
-                                    svCentroids.push_back( svCentroids[ prevSVIdx ] );
-
-                                    rotMatrices.push_back( -rotMatrices[ prevSVIdx ] );
-
-                                    //histMatrix.row( newSVIdx ) = histMatrix.row( prevSVIdx );
-
-                                    appendedPositivesAsNegativesIdx.push_back( newSVIdx );
-
-                                    // also duplicate std dev / mean
-                                #if APPLY_PATCH_VARNORM
-                                    for (unsigned q=0; q < trainCombo.svoxWindowMean.size(); q++)
-                                    {
-                                        trainCombo.svoxWindowMean[q].push_back( trainCombo.svoxWindowMean[q][prevSVIdx] );
-                                        trainCombo.svoxWindowInvStd[q].push_back( trainCombo.svoxWindowInvStd[q][prevSVIdx] );
-                                    }
-                                #endif
-                            }
+                        trainCombo.svoxWindowMean[q].push_back( trainCombo.svoxWindowMean[q][prevSVIdx] );
+                        trainCombo.svoxWindowInvStd[q].push_back( trainCombo.svoxWindowInvStd[q][prevSVIdx] );
                     }
-            } else
-                qDebug("WARNING: not adding artificial negatives!");
+#endif
+                }
+            }
+        }
+        else
+            qPrint("WARNING: not adding artificial negatives!");
 
         // debugging stuff
         if ( appendPositivesAsNegatives && false )
         {
-            qDebug("------- Negative / positives test");
+            qPrint("Running negatives/positives test");
 
             for (unsigned w=0; w < 10; w++)
             {
@@ -2039,55 +2076,60 @@ int main(int argc, char **argv)
                 qDebug("CenterN: %d %d %d", svCentroids[negIdx].x, svCentroids[negIdx].y, svCentroids[negIdx].z );
                 qDebug("OrientP: %.1f %.1f %.1f", rotMatrices[posIdx].coeff(0,2), rotMatrices[posIdx].coeff(1,2), rotMatrices[posIdx].coeff(2,2));
                 qDebug("OrientN: %.1f %.1f %.1f", rotMatrices[negIdx].coeff(0,2), rotMatrices[negIdx].coeff(1,2), rotMatrices[negIdx].coeff(2,2));
-                qDebug("MatrixP:"); std::cout << trainCombo.rotMatrices[posIdx] << std::endl;
-                qDebug("MatrixN:"); std::cout << trainCombo.rotMatrices[negIdx] << std::endl;
+                qDebug("MatrixP:");
+                std::cout << trainCombo.rotMatrices[posIdx] << std::endl;
+                qDebug("MatrixN:");
+                std::cout << trainCombo.rotMatrices[negIdx] << std::endl;
                 qDebug("-----------------------------------------");
             }
 
             qDebug("------- End Negative / positives test");
         }
 
-	
-        qDebug("____________________ Integral images: %d", (int) trainCombo.pixIntegralImages.size() );
+
+        qPrint("Integral images: %d", (int) trainCombo.pixIntegralImages.size() );
 
 
         // concatenate pos and neg
         std::vector<unsigned int>  samplesIdx(posSVIdx.size() + negSVIdx.size());
         std::vector<unsigned int>  samplesClass( samplesIdx.size() );
-        for (unsigned int i=0; i < posSVIdx.size(); i++) {
+        for (unsigned int i=0; i < posSVIdx.size(); i++)
+        {
             samplesIdx[i] = posSVIdx[i];
             samplesClass[i] = 1;
         }
 
-        for (unsigned int i=0; i < negSVIdx.size(); i++) {
+        for (unsigned int i=0; i < negSVIdx.size(); i++)
+        {
             samplesIdx[posSVIdx.size() + i] = negSVIdx[i];
             samplesClass[posSVIdx.size() + i] = 0;
         }
 
 
-        #if 0
-            for (unsigned int i=0; i < samplesClass.size(); i++) {
-                histMatrix( samplesIdx[i], 1) = (samplesClass[i] == 1)?10:20;
-            }
-            histMatrix(samplesIdx[20], 1) = 200;
-            histMatrix(samplesIdx[21], 1) = 3;
-            histMatrix(samplesIdx[22], 1) = 4;
-            histMatrix(samplesIdx[23], 1) = 5;
-        #endif
+#if 0
+        for (unsigned int i=0; i < samplesClass.size(); i++)
+        {
+            histMatrix( samplesIdx[i], 1) = (samplesClass[i] == 1)?10:20;
+        }
+        histMatrix(samplesIdx[20], 1) = 200;
+        histMatrix(samplesIdx[21], 1) = 3;
+        histMatrix(samplesIdx[22], 1) = 4;
+        histMatrix(samplesIdx[23], 1) = 5;
+#endif
 
         HistogramMeanThresholdData params( svCentroids, trainCombo.rotMatrices, trainCombo.pixIntegralImages, SVox.pixelToVoxel(),
                                            cfgData.train.zAnisotropyFactor
-                                   #if APPLY_PATCH_VARNORM
+#if APPLY_PATCH_VARNORM
                                            , trainCombo.svoxWindowInvStd, trainCombo.svoxWindowMean );
-                                   #else
-                                           );
-                                   #endif
+#else
+                                         );
+#endif
 
-		params.numWLToExplore = cfgData.numWLToExplorePerIter;
+        params.numWLToExplore = cfgData.numWLToExplorePerIter;
         adaboost.init( params, samplesIdx, samplesClass );
 
         adaboost.setReweightingSamplingRatio( cfgData.reweightingSamplingRatio );
-		adaboost.setThresholdSearchOnWholeData( cfgData.thresholdSearchOnWholeData);
+        adaboost.setThresholdSearchOnWholeData( cfgData.thresholdSearchOnWholeData);
 
         // to tell the adaboost class which samples are artifneg
         std::vector<unsigned char> isArtifNeg( samplesIdx.size(), 0 );
@@ -2096,7 +2138,7 @@ int main(int argc, char **argv)
             std::vector<unsigned int>::iterator it = std::find( samplesIdx.begin(), samplesIdx.end(), appendedPositivesAsNegativesIdx[i] );
 
             if ( it == samplesIdx.end() )
-                qFatal("not found, something wrong.");
+                qFatal("Not found, something wrong.");
 
             isArtifNeg[(it - samplesIdx.begin())] = 1;
         }
@@ -2105,14 +2147,14 @@ int main(int argc, char **argv)
 
         if ( appendPositivesAsNegatives && cfgData.treatArtificialNegativesAsPositivesInResampling )   // then we have to modify the minority idxs
         {
-            qDebug("Modifying minority idxs for negative samples");
+            qPrint("Modifying minority idxs for negative samples");
             std::vector<unsigned char> minClassIdx( samplesIdx.size(), 0 );
             for (unsigned i=0; i < posSVIdx.size(); i++)
             {
                 std::vector<unsigned int>::iterator it = std::find( samplesIdx.begin(), samplesIdx.end(), posSVIdx[i] );
 
                 if ( it == samplesIdx.end() )
-                    qFatal("not found, something wrong.");
+                    qFatal("Not found, something wrong.");
 
                 minClassIdx[(it - samplesIdx.begin())] = 1;
             }
@@ -2122,23 +2164,25 @@ int main(int argc, char **argv)
                 std::vector<unsigned int>::iterator it = std::find( samplesIdx.begin(), samplesIdx.end(), appendedPositivesAsNegativesIdx[i] );
 
                 if ( it == samplesIdx.end() )
-                    qFatal("not found, something wrong.");
+                    qFatal("Not found, something wrong.");
 
                 minClassIdx[(it - samplesIdx.begin())] = 1;
             }
 
             adaboost.setMinorityClassIdx( minClassIdx );
         }
-        
+
         adaboost.setBackupLearnedStumpsFileName( cfgData.outFileName + "-backupstumps.cfg" );
 
         // only learn if stumps were not provided
         if (cfgData.savedStumpsPath.empty() || cfgData.relearnThresholds)
         {
-            qDebug("Adaboost learn..");
+            qPrint("Adaboost learn");
             adaboost.learn( cfgData.numStumps, trainCombo, cfgData.relearnThresholds );
-        } else {
-            qDebug("Not learning because stumps were provided.");
+        }
+        else
+        {
+            qPrint("Not learning because stumps were provided");
         }
 
         adaboost.printSplitInformation();
@@ -2151,7 +2195,7 @@ int main(int argc, char **argv)
 
             if (doIt)
             {
-                qDebug("Saving features...");
+                qPrint("Saving features (should not be here)");
 
                 Eigen::ArrayXXf feats;
 
@@ -2171,12 +2215,12 @@ int main(int argc, char **argv)
             clock_gettime( CLOCK_REALTIME, &ts1 );
             adaboost.predict( adaboost.getSampleIdxs(), trainedScoreFloat, trainCombo, true );
             clock_gettime( CLOCK_REALTIME, &ts2 );
-						//float t_p = (float) ( 1.0*(1.0*ts2.tv_nsec - ts1.tv_nsec*1.0)*1e-9 + 1.0*ts2.tv_sec - 1.0*ts1.tv_sec );
-						//int t_h = floor(t_p / 3600.);
-						//t_p -= 3600. * t_h;
-						//int t_m = floor(t_p / 60.);
-						//t_p -= 60. * t_m;
-						//int t_s = round(t_p);
+            //float t_p = (float) ( 1.0*(1.0*ts2.tv_nsec - ts1.tv_nsec*1.0)*1e-9 + 1.0*ts2.tv_sec - 1.0*ts1.tv_sec );
+            //int t_h = floor(t_p / 3600.);
+            //t_p -= 3600. * t_h;
+            //int t_m = floor(t_p / 60.);
+            //t_p -= 60. * t_m;
+            //int t_s = round(t_p);
             //printf("CCboost service :: Prediction: %d:%02d:%02d\n", t_h, t_m, t_s);
 
             Eigen::ArrayXd trainedScore = trainedScoreFloat.cast<double>();
@@ -2215,13 +2259,13 @@ int main(int argc, char **argv)
             fclose(f);
             qDebug("File written");*/
 
-			if (cfgData.outputPlattScaling)
-			{
-				qDebug("Learning platt scaling factors..");
-				sigmoidPlatt.Fit( trainedScore, adaboost.getSampleClasses(), &sampleWeights );
-			}
+            if (cfgData.outputPlattScaling)
+            {
+                qPrint("Learning platt scaling factors");
+                sigmoidPlatt.Fit( trainedScore, adaboost.getSampleClasses(), &sampleWeights );
+            }
 
-            qDebug("Platt: %f  /  %f %d %d", sigmoidPlatt.getA(), sigmoidPlatt.getB(), (int) numNeg, (int) numPos);
+            qPrint("Platt: %f  /  %f %d %d", sigmoidPlatt.getA(), sigmoidPlatt.getB(), (int) numNeg, (int) numPos);
         }
 
         // save learned stumps + platt scaling, only if it was not saved before
@@ -2231,14 +2275,14 @@ int main(int argc, char **argv)
         // save weight images?
         if (cfgData.saveTrainingWeights)
         {
-            qDebug("Saving weight images...");
+            qPrint("Saving weight images");
             saveTrainingWeights( cfgData, adaboost, trainCombo, appendedPositivesAsNegativesIdx );
         }
 
     }
 
     /** ------- TEST PHASE ***********/
-    qDebug("---------> BEGIN TEST!");
+    qPrint("STARTING TESTING!");
 
     for (unsigned ti = 0; ti < cfgData.test.size(); ti++)
     {
@@ -2262,11 +2306,11 @@ int main(int argc, char **argv)
 
         HistogramMeanThresholdData params( svCentroids, testCombo.rotMatrices, testCombo.pixIntegralImages, SVox.pixelToVoxel(),
                                            cfgData.test[ti].zAnisotropyFactor
-                                           #if APPLY_PATCH_VARNORM
+#if APPLY_PATCH_VARNORM
                                            ,testCombo.svoxWindowInvStd, testCombo.svoxWindowMean);
-                                           #else
-                                           );
-                                           #endif
+#else
+                                         );
+#endif
 
         adaboost.reInit( params );  // set new params for test volume
 
@@ -2284,199 +2328,207 @@ int main(int argc, char **argv)
                     outputFeatureData = true;
             }
 
+            {
+                qPrint("Starting prediction");
+                TimerRT predTimer;
+                predTimer.Reset();
+                adaboost.predict( predSamples, score, testCombo, cfgData.outputPlattScaling );
+                //qDebug("Pred elapsed: %f", predTimer.elapsed());
+
+                if (cfgData.outputPlattScaling)
+                    sigmoidPlatt.Apply( score, score );
+
+
+                Eigen::ArrayXXf eFeats;
+
+                // save features?
+                if ( outputFeatureData )
                 {
-                    TimerRT predTimer;
-                    predTimer.Reset();
-                    adaboost.predict( predSamples, score, testCombo, cfgData.outputPlattScaling );
-										float t_p = predTimer.elapsed();
-										int t_h = floor(t_p / 3600.);
-										t_p -= 3600. * t_h;
-										int t_m = floor(t_p / 60.);
-										t_p -= 60. * t_m;
-										int t_s = round(t_p);
-										printf("CCboost service :: Prediction: %d:%02d:%02d\n", t_h, t_m, t_s);
-                    //qDebug("Pred elapsed: %f", predTimer.elapsed());
+                    qDebug("Generating features (REQUESTED IN CONFIG FILE)");
 
-                    if (cfgData.outputPlattScaling)
-                        sigmoidPlatt.Apply( score, score );
+                    adaboost.exportFeatures( predSamples, eFeats );
 
-
-                    Eigen::ArrayXXf eFeats;
-
-                    // save features?
-                    if ( outputFeatureData )
+                    qDebug("Saving features");
                     {
-                        qDebug("Generating features (REQUESTED IN CONFIG FILE)...");
-
-                        adaboost.exportFeatures( predSamples, eFeats );
-
-                        qDebug("Saving features...");
-                        {
-                            qDebug("Test matrix size: %d x %d", (int)eFeats.rows(), (int)eFeats.cols() );
-                            writeMatrix( outputBaseName + "-testFeaturesA.bin", eFeats );
-                        }
-                    }
-
-                    testCombo.invertRotMatrices();
-
-                    predTimer.Reset();
-                    adaboost.predict( predSamples, scoreInv, testCombo, cfgData.outputPlattScaling );
-                    qDebug("Pred elapsed: %f", predTimer.elapsed());
-                    if (cfgData.outputPlattScaling)
-                        sigmoidPlatt.Apply( scoreInv, scoreInv );
-
-
-                    Eigen::ArrayXXf eFeatsInv;
-                    Eigen::ArrayXXf eFeatsMaxResp;
-
-                    // save features?
-                    if ( outputFeatureData )
-                    {
-                        qDebug("Generating features (REQUESTED IN CONFIG FILE)...");
-
-                        adaboost.exportFeatures( predSamples, eFeatsInv );
-
-                        qDebug("Saving features...");
-                        {
-                            writeMatrix( outputBaseName + "-testFeaturesB.bin", eFeatsInv );
-                        }
-
-                        eFeatsMaxResp.resizeLike(eFeatsInv);
-                    }
-
-                    // create matrix and write to file
-                    {
-                            typedef itk::VectorImage<float, 3>  ItkVectorImageType;
-                            ItkVectorImageType::Pointer predOrientImg;  // will be filled only if requested
-
-                            if ( cfgData.outputOrientationEstimate )
-                            {
-                                itk::ImageFileReader<ItkVectorImageType>::Pointer reader = itk::ImageFileReader<ItkVectorImageType>::New();
-                                reader->SetFileName( cfgData.test[ti].orientEstimate );
-                                reader->Update();
-
-                                predOrientImg = reader->GetOutput();
-                            }
-
-
-                            Matrix3D<PixelType> predVolumeMax, predVolumeMin;
-                            Matrix3D<float>     predVolumeMaxF, predVolumeMinF;
-
-                            if (cfgData.outputPlattScaling)
-                            {
-                                predVolumeMax.reallocSizeLike( rawImage );
-                                predVolumeMin.reallocSizeLike( rawImage );
-                            } else
-                            {
-                                predVolumeMaxF.reallocSizeLike( rawImage );
-                                predVolumeMinF.reallocSizeLike( rawImage );
-                            }
-
-
-                            for (unsigned int i=0; i < predSamples.size(); i++)
-                            {
-                                    float minS = score(i);
-                                    float maxS = scoreInv(i);
-
-                                    if (outputFeatureData)
-                                        eFeatsMaxResp.row(i) = eFeatsInv.row(i);
-
-                                    bool voteForInv = true;
-
-                                    if (minS > maxS)
-                                    {
-                                        float tmp = minS;
-                                        minS = maxS;
-                                        maxS = tmp;
-
-                                        if (outputFeatureData)
-                                            eFeatsMaxResp.row(i) = eFeats.row(i);
-
-                                        voteForInv = false;
-                                    }
-
-                                    double probMax = 0;
-                                    double probMin = 0;
-                                    if (false) {
-                                            probMax = 1.0/(1.0 + exp(-2*maxS));
-                                            probMin = 1.0/(1.0 + exp(-2*minS));
-                                    }
-                                    else {
-                                            probMax = maxS;
-                                            probMin = minS;
-                                    }
-
-                                    const PixelInfoList &pixList = SVox.voxelToPixel().at(predSamples[i]);
-
-                                    // then we have to invert the orientation of the voxels inside this supervoxel
-                                    if (cfgData.outputOrientationEstimate && voteForInv)
-                                    {
-                                        for (unsigned int p=0; p < pixList.size(); p++)
-                                        {
-                                            ItkVectorImageType::IndexType index;
-                                            index[0] = pixList[p].coords.x;
-                                            index[1] = pixList[p].coords.y;
-                                            index[2] = pixList[p].coords.z;
-
-                                            predOrientImg->SetPixel( index, - predOrientImg->GetPixel(index) );
-                                        }
-                                    }
-
-                                    if (cfgData.outputPlattScaling)
-                                    {
-                                        const PixelType valMax = 254 * probMax;
-                                        const PixelType valMin = 254 * probMin;
-
-                                        for (unsigned int p=0; p < pixList.size(); p++) {
-                                                predVolumeMax.data()[ pixList[p].index ] = valMax;
-                                                predVolumeMin.data()[ pixList[p].index ] = valMin;
-                                        }
-                                    } else
-                                    {
-                                        for (unsigned int p=0; p < pixList.size(); p++) {
-                                                predVolumeMaxF.data()[ pixList[p].index ] = probMax;
-                                                predVolumeMinF.data()[ pixList[p].index ] = probMin;
-                                        }
-                                    }
-                            }
-
-                            if (cfgData.outputOrientationEstimate)
-                            {
-                                qDebug("Saving orientation estimate...");
-                                std::string fName = outputBaseName + "-predOrient.nrrd";
-
-                                itk::ImageFileWriter<ItkVectorImageType>::Pointer writer = itk::ImageFileWriter<ItkVectorImageType>::New();
-                                writer->SetFileName( fName );
-                                writer->SetInput( predOrientImg );
-                                writer->Update();
-                            }
-
-                            if (outputFeatureData)
-                            {
-                                // save
-                                qDebug("Saving features...");
-                                {
-                                    writeMatrix( outputBaseName + "testFeatures-max.bin", eFeatsMaxResp );
-                                }
-                            }
-
-                            if (cfgData.outputPlattScaling)
-                            {
-                                predVolumeMax.save( outputBaseName + "ab-max.tif" );
-                                predVolumeMin.save( outputBaseName + "ab-min.tif" );
-                            } else
-                            {
-                                predVolumeMaxF.save( outputBaseName + "ab-max.nrrd" );
-                                predVolumeMinF.save( outputBaseName + "ab-min.nrrd" );
-                            }
+                        qDebug("Test matrix size: %d x %d", (int)eFeats.rows(), (int)eFeats.cols() );
+                        writeMatrix( outputBaseName + "-testFeaturesA.bin", eFeats );
                     }
                 }
+
+                testCombo.invertRotMatrices();
+
+                predTimer.Reset();
+                adaboost.predict( predSamples, scoreInv, testCombo, cfgData.outputPlattScaling );
+                //qDebug("Pred elapsed: %f", predTimer.elapsed());
+
+                float t_p = predTimer.elapsed();
+                int t_h = floor(t_p / 3600.);
+                t_p -= 3600. * t_h;
+                int t_m = floor(t_p / 60.);
+                t_p -= 60. * t_m;
+                int t_s = round(t_p);
+                qPrint("Done: %d:%02d:%02d s.", t_h, t_m, t_s);
+
+                if (cfgData.outputPlattScaling)
+                    sigmoidPlatt.Apply( scoreInv, scoreInv );
+
+                Eigen::ArrayXXf eFeatsInv;
+                Eigen::ArrayXXf eFeatsMaxResp;
+
+                // save features?
+                if ( outputFeatureData )
+                {
+                    qDebug("Generating features (REQUESTED IN CONFIG FILE)");
+
+                    adaboost.exportFeatures( predSamples, eFeatsInv );
+
+                    qDebug("Saving features");
+                    {
+                        writeMatrix( outputBaseName + "-testFeaturesB.bin", eFeatsInv );
+                    }
+
+                    eFeatsMaxResp.resizeLike(eFeatsInv);
+                }
+
+                // create matrix and write to file
+                {
+                    typedef itk::VectorImage<float, 3>  ItkVectorImageType;
+                    ItkVectorImageType::Pointer predOrientImg;  // will be filled only if requested
+
+                    if ( cfgData.outputOrientationEstimate )
+                    {
+                        itk::ImageFileReader<ItkVectorImageType>::Pointer reader = itk::ImageFileReader<ItkVectorImageType>::New();
+                        reader->SetFileName( cfgData.test[ti].orientEstimate );
+                        reader->Update();
+
+                        predOrientImg = reader->GetOutput();
+                    }
+
+
+                    Matrix3D<PixelType> predVolumeMax, predVolumeMin;
+                    Matrix3D<float>     predVolumeMaxF, predVolumeMinF;
+
+                    if (cfgData.outputPlattScaling)
+                    {
+                        predVolumeMax.reallocSizeLike( rawImage );
+                        predVolumeMin.reallocSizeLike( rawImage );
+                    }
+                    else
+                    {
+                        predVolumeMaxF.reallocSizeLike( rawImage );
+                        predVolumeMinF.reallocSizeLike( rawImage );
+                    }
+
+
+                    for (unsigned int i=0; i < predSamples.size(); i++)
+                    {
+                        float minS = score(i);
+                        float maxS = scoreInv(i);
+
+                        if (outputFeatureData)
+                            eFeatsMaxResp.row(i) = eFeatsInv.row(i);
+
+                        bool voteForInv = true;
+
+                        if (minS > maxS)
+                        {
+                            float tmp = minS;
+                            minS = maxS;
+                            maxS = tmp;
+
+                            if (outputFeatureData)
+                                eFeatsMaxResp.row(i) = eFeats.row(i);
+
+                            voteForInv = false;
+                        }
+
+                        double probMax = 0;
+                        double probMin = 0;
+                        if (false)
+                        {
+                            probMax = 1.0/(1.0 + exp(-2*maxS));
+                            probMin = 1.0/(1.0 + exp(-2*minS));
+                        }
+                        else
+                        {
+                            probMax = maxS;
+                            probMin = minS;
+                        }
+
+                        const PixelInfoList &pixList = SVox.voxelToPixel().at(predSamples[i]);
+
+                        // then we have to invert the orientation of the voxels inside this supervoxel
+                        if (cfgData.outputOrientationEstimate && voteForInv)
+                        {
+                            for (unsigned int p=0; p < pixList.size(); p++)
+                            {
+                                ItkVectorImageType::IndexType index;
+                                index[0] = pixList[p].coords.x;
+                                index[1] = pixList[p].coords.y;
+                                index[2] = pixList[p].coords.z;
+
+                                predOrientImg->SetPixel( index, - predOrientImg->GetPixel(index) );
+                            }
+                        }
+
+                        if (cfgData.outputPlattScaling)
+                        {
+                            const PixelType valMax = 254 * probMax;
+                            const PixelType valMin = 254 * probMin;
+
+                            for (unsigned int p=0; p < pixList.size(); p++)
+                            {
+                                predVolumeMax.data()[ pixList[p].index ] = valMax;
+                                predVolumeMin.data()[ pixList[p].index ] = valMin;
+                            }
+                        }
+                        else
+                        {
+                            for (unsigned int p=0; p < pixList.size(); p++)
+                            {
+                                predVolumeMaxF.data()[ pixList[p].index ] = probMax;
+                                predVolumeMinF.data()[ pixList[p].index ] = probMin;
+                            }
+                        }
+                    }
+
+                    if (cfgData.outputOrientationEstimate)
+                    {
+                        qPrint("Saving orientation estimate (should not be here)");
+                        std::string fName = outputBaseName + "-predOrient.nrrd";
+
+                        itk::ImageFileWriter<ItkVectorImageType>::Pointer writer = itk::ImageFileWriter<ItkVectorImageType>::New();
+                        writer->SetFileName( fName );
+                        writer->SetInput( predOrientImg );
+                        writer->Update();
+                    }
+
+                    if (outputFeatureData)
+                    {
+                        // save
+                        qPrint("Saving features (should not be here)");
+                        {
+                            writeMatrix( outputBaseName + "testFeatures-max.bin", eFeatsMaxResp );
+                        }
+                    }
+
+                    if (cfgData.outputPlattScaling)
+                    {
+                        predVolumeMax.save( outputBaseName + "ab-max.tif" );
+                        predVolumeMin.save( outputBaseName + "ab-min.tif" );
+                    }
+                    else
+                    {
+                        predVolumeMaxF.save( outputBaseName + "ab-max.nrrd" );
+                        predVolumeMinF.save( outputBaseName + "ab-min.nrrd" );
+                    }
+                }
+            }
         }
     }
-    
-    qDebug("Everything done!");
+
+    qPrint("CCBOOST Finished!");
 
     return 0;
 }
-
 
