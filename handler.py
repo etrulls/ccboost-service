@@ -2,7 +2,7 @@ import os
 import argparse
 from configobj import ConfigObj
 from validate import Validator
-from utils import convert, compute_synapse_features, dilate_labels
+from utils import convert, compute_synapse_features, dilate_labels, timestamp
 import random
 import string
 import tifffile
@@ -17,8 +17,6 @@ parser.add_argument('--train', type=str, help='Config file for training')
 parser.add_argument('--test', type=str, help='Config file for testing')
 parser.add_argument('--username', type=str, help='Username')
 parser.add_argument('--recompute', dest='recompute', default=False, action='store_true', help='Recompute CCboost features, even if cached')
-# parser.add_argument('--mirror', type=int, default=0, help='Mirror data/labels (number of voxels)')
-# parser.add_argument('--ignore', type=int, default=0, help='Ignore pixels around annotations (number of voxels)')
 
 params = parser.parse_args()
 username = params.username
@@ -42,7 +40,7 @@ else:
 # Config file
 if is_train:
     config = ConfigObj(config_file, configspec=dir_path + '/config/trainspec.cfg')
-    print('CCBOOST :: config = {}'.format(config))
+    print(timestamp() + ' CCBOOST: config = {}'.format(config))
     sys.stdout.flush()
 else:
     config = ConfigObj(config_file, configspec=dir_path + '/config/testspec.cfg')
@@ -84,7 +82,7 @@ if not os.path.isdir(folder_model):
 
 
 # Convert from h5 to tif
-print('CCBOOST :: Converting data into TIFF')
+print(timestamp() + ' CCBOOST: Converting data into TIFF')
 sys.stdout.flush()
 stack = convert(config['stack'], 'tif')
 if is_train:
@@ -93,62 +91,63 @@ if is_train:
 # Mirror training stack and labels to avoid boundary issues
 # Will be deleted at the end of the run, but it should not be displayed to the user (h5 only)
 if config['mirror'] > 0:
-    print('CCBOOST :: Dilating stacks and labels')
-    print('CCBOOST :: Source data file: {}'.format(stack))
+    print(timestamp() + ' CCBOOST: Dilating stacks and labels')
+    print(timestamp() + ' CCBOOST: Source data file: {}'.format(stack))
     sys.stdout.flush()
     s = stack.split('/')
     fn_file = s[-1]
     fn_base = '.'.join(fn_file.split('.')[0:-1])
     fn_ext = fn_file.split('.')[-1]
-    stack = '{}/{}-mirrored-{}.{}'.format(scratch, fn_base, config['mirror'], fn_ext)
-    if os.path.isfile(stack):
-        print('CCBOOST :: Skipping, exists: {}'.format(stack))
+    stack_m = '{}/{}-mirrored-{}.{}'.format(scratch, fn_base, config['mirror'], fn_ext)
+    if os.path.isfile(stack_m):
+        print(timestamp() + ' CCBOOST: Skipping, exists: {}'.format(stack_m))
         sys.stdout.flush()
     else:
-        print('CCBOOST :: Mirrored data file: {}'.format(stack))
+        print(timestamp() + ' CCBOOST: Mirrored data file: {}'.format(stack_m))
         sys.stdout.flush()
         x = tifffile.imread(stack)
         x = np.pad(x, config['mirror'], 'reflect')
-        tifffile.imsave(stack, x)
-        x = None
+        tifffile.imsave(stack_m, x)
+        del x
+    stack = stack_m
 
     if is_train:
         s = labels.split('/')
         fn_file = s[-1]
         fn_base = '.'.join(fn_file.split('.')[0:-1])
         fn_ext = fn_file.split('.')[-1]
-        labels = '{}/{}-mirrored-{}.{}'.format(scratch, fn_base, config['mirror'], fn_ext)
-        if os.path.isfile(labels):
-            print('CCBOOST :: Skipping, exists: {}'.format(labels))
+        labels_m = '{}/{}-mirrored-{}.{}'.format(scratch, fn_base, config['mirror'], fn_ext)
+        if os.path.isfile(labels_m):
+            print(timestamp() + ' CCBOOST: Skipping, exists: {}'.format(labels_m))
             sys.stdout.flush()
         else:
-            print('CCBOOST :: Mirrored labels file: {}'.format(labels))
+            print(timestamp() + ' CCBOOST: Mirrored labels file: {}'.format(labels_m))
             sys.stdout.flush()
             x = tifffile.imread(labels)
             x = np.pad(x, config['mirror'], 'reflect')
-            tifffile.imsave(labels, x)
-            x = None
+            tifffile.imsave(labels_m, x)
+            del x
+        labels = labels_m
 
     # from time import sleep
     # sleep(5)
 
 # Ignore pixels around annotations
 if is_train:
-    if config['ignore'] > 0:
+    if sum(config['ignore']) > 0:
         s = labels.split('/')
         fn_file = s[-1]
         fn_base = '.'.join(fn_file.split('.')[0:-1])
         fn_ext = fn_file.split('.')[-1]
-        o = '{}/{}-ignore-{}.{}'.format(scratch, fn_base, config['ignore'], fn_ext)
-        
+        labels_d = '{}/{}-ignore-{}-{}.{}'.format(scratch, fn_base, config['ignore'][0], config['ignore'][0], fn_ext)
         x = tifffile.imread(labels)
         x = dilate_labels(x, config['ignore'])
-        tifffile.imsave(o, x)
-
-        labels = o
+        tifffile.imsave(labels_d, x)
+        del x
+        labels = labels_d
 
 # Compute features
-print('CCBOOST :: Computing features')
+print(timestamp() + ' CCBOOST: Computing features')
 sys.stdout.flush()
 compute_synapse_features(
     stack,
@@ -214,14 +213,14 @@ else:
 
 tmp_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
 tmp_name = '/tmp/' + tmp_name
-print('CCBOOST :: Saving template to "{}"'.format(tmp_name))
+print(timestamp() + ' CCBOOST: Saving template to "{}"'.format(tmp_name))
 sys.stdout.flush()
 f = open(tmp_name, 'w')
 f.write(template)
 f.close()
 
 # Train model (if necessary) and get results
-print('CCBOOST :: Calling ccboost binary')
+print(timestamp() + ' CCBOOST: Calling ccboost binary')
 sys.stdout.flush()
 cmd = dir_path + '/ccboost-v0.21/build/ccboost {}'.format(tmp_name)
 os.system(cmd)
@@ -232,8 +231,8 @@ os.system(cmd)
 # Remove mirrored boundaries for training
 ccboost_res = folder_results + '/out-0-ab-max.nrrd'
 if config['mirror']> 0:
-    print('CCBOOST :: Removing mirrored boundaries')
-    print('CCBOOST :: File: {}'.format(ccboost_res))
+    print(timestamp() + ' CCBOOST: Removing mirrored boundaries')
+    print(timestamp() + ' CCBOOST: File: {}'.format(ccboost_res))
     sys.stdout.flush()
     x, o = nrrd.read(ccboost_res)
     x = x[config['mirror']:-config['mirror'],
@@ -245,7 +244,7 @@ if config['mirror']> 0:
 # Convert results to tif so we can see something, and h5 so we can get them back to the server
 r_tif = convert(ccboost_res, 'tif')
 r_h5 = convert(ccboost_res, 'h5')
-print('CCBOOST :: Results stored in h5 at "{}"'.format(r_h5))
+print(timestamp() + ' CCBOOST: Results stored in h5 at "{}"'.format(r_h5))
 sys.stdout.flush()
 
 # Delete the tiff files after processing
@@ -255,7 +254,7 @@ sys.stdout.flush()
 if is_train:
     os.rename(folder_results + '/out-backupstumps.cfg', folder_model + '/backup-stumps.cfg')
     os.rename(folder_results + '/out-stumps.cfg', folder_model + '/stumps.cfg')
-    print('CCBOOST :: Trained models stored at "{}"'.format(folder_model))
+    print(timestamp() + ' CCBOOST: Trained models stored at "{}"'.format(folder_model))
     sys.stdout.flush()
 
 # Clean up
