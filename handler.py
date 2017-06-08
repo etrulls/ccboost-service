@@ -185,7 +185,7 @@ if is_train:
         raise RuntimeError('Some field was not filled in in the template? ' + template)
 else:
     # Open template
-    with open('templates/test.cfg', 'r') as f:
+    with open(dir_path + '/templates/test.cfg', 'r') as f:
         template = f.read()
 
     # Replace variables
@@ -233,6 +233,7 @@ if config['mirror']> 0:
 # Convert results to tif so we can see something, and h5 so we can get them back to the server
 r_tif = convert(ccboost_res, 'tif')
 r_h5 = convert(ccboost_res, 'h5')
+print r_h5
 print('CCBOOST Service :: Results stored in h5 at "{}"'.format(r_h5))
 
 # Delete the tiff files after processing
