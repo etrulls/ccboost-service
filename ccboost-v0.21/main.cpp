@@ -443,8 +443,8 @@ public:
 
         qDebug("Resampling minority class: [%d %d (%d)]", numAlways, numOtherToSample, samplingRatio);
 
-        if (numOther < numOtherToSample)
-            qFatal("Using sampling ratio %d with %d positive samples. Required negative examples: %d. Provided: %d", samplingRatio, numAlways, numOtherToSample, numOther);
+        //if (numOther < numOtherToSample)
+        //    qFatal("Using sampling ratio %d with %d positive samples. Required negative examples: %d. Provided: %d", samplingRatio, numAlways, numOtherToSample, numOther);
             //qFatal("Num non-always assumed >= N * numAlwaysToSample!");
 
         newSampleIdx.resize(numAlways + numOtherToSample);

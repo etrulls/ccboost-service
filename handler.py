@@ -252,10 +252,10 @@ sys.stdout.flush()
 
 # Move models to the right location
 if is_train:
-    os.rename(folder_results + '/out-backupstumps.cfg', folder_model + '/backup-stumps.cfg')
-    os.rename(folder_results + '/out-stumps.cfg', folder_model + '/stumps.cfg')
     print(timestamp() + ' CCBOOST: Trained models stored at "{}"'.format(folder_model))
     sys.stdout.flush()
+    os.rename(folder_results + '/out-backupstumps.cfg', folder_model + '/backup-stumps.cfg')
+    os.rename(folder_results + '/out-stumps.cfg', folder_model + '/stumps.cfg')
 
 # Clean up
 # os.remove(config['stack_tif'])
