@@ -32,7 +32,7 @@ def convert(src, fmt, delete_after=False):
     base = '.'.join(src.split('.')[:-1])
     if fmt == 'h5':
         tgt = base + '.h5'
-    elif fmt == 'tif':
+    elif fmt in ['tif', 'tiff']:
         tgt = base + '.tif'
     elif fmt == 'nrrd':
         tgt = base + '.nrrd'
@@ -40,8 +40,12 @@ def convert(src, fmt, delete_after=False):
         raise RuntimeError('Unsupported format')
 
     # No need to re-convert (or self-convert)
+    # if os.path.isfile(tgt):
+    #     return tgt
+
+    # Do this every time, for safety
     if os.path.isfile(tgt):
-        return tgt
+        os.remove(tgt)
 
     # Parse input
     if curr_fmt == 'tif':
@@ -56,9 +60,9 @@ def convert(src, fmt, delete_after=False):
 
     # Convert
     if fmt == 'h5':
-        f = h5py.File(tgt, 'w-')
-        f.create_dataset(name='data', data=x)
-        f.close()
+        with h5py.File(tgt, 'w') as f:
+            f.create_dataset(name='data', data=x, chunks=True)
+            # f.create_dataset(name='data', data=x, chunks=tuple(25 for i in range(len(x.shape))))
     elif fmt == 'tif':
         tifffile.imsave(tgt, x)
     elif fmt == 'nrrd':
@@ -96,7 +100,7 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
     if not os.path.isdir(output_folder):
         os.path.mkdir(output_folder)
 
-    print(timestamp() + ' CCBOOST: Computing eigenvectors of the structure tensor (s=0.5/r=1.0)...')
+    print(timestamp() + ' Computing eigenvectors of the structure tensor (s=0.5/r=1.0)...')
     sys.stdout.flush()
     o = '{}/stensor-s0.5-r1.0{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 0.5 1.0 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
@@ -108,7 +112,7 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         print('Skipping: "{}"'.format(s))
     sys.stdout.flush()
 
-    print(timestamp() + ' CCBOOST: Computing eigenvectors of the structure tensor (s=0.8/r=0.6)...')
+    print(timestamp() + ' Computing eigenvectors of the structure tensor (s=0.8/r=0.6)...')
     sys.stdout.flush()
     o = '{}/stensor-s0.8-r1.6{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 0.8 1.6 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
@@ -120,7 +124,7 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         print('Skipping: "{}"'.format(s))
     sys.stdout.flush()
 
-    print(timestamp() + ' CCBOOST: Computing eigenvectors of the structure tensor (s=1.8/r=3.5)...')
+    print(timestamp() + ' Computing eigenvectors of the structure tensor (s=1.8/r=3.5)...')
     sys.stdout.flush()
     o = '{}/stensor-s1.8-r3.5{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 1.8 3.5 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
@@ -132,7 +136,7 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         print('Skipping: "{}"'.format(s))
     sys.stdout.flush()
 
-    print(timestamp() + ' CCBOOST: Computing eigenvectors of the structure tensor (s=2.5/r=5.0)...')
+    print(timestamp() + ' Computing eigenvectors of the structure tensor (s=2.5/r=5.0)...')
     sys.stdout.flush()
     o = '{}/stensor-s2.5-r5.0{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 2.5 5.0 1.0 {} 1'.format(bin_loc, eigOfST, data, o)
@@ -144,7 +148,7 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         print('Skipping: "{}"'.format(s))
     sys.stdout.flush()
 
-    print(timestamp() + ' CCBOOST: Computing single eigenvector of Hessian...')
+    print(timestamp() + ' Computing single eigenvector of Hessian...')
     sys.stdout.flush()
     o = '{}/hessOrient-s3.5-highestMag{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 3.5 1.0 {} 1'.format(bin_loc, singleEigVecHess, data, o)
@@ -156,7 +160,7 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         print('Skipping: "{}"'.format(s))
     sys.stdout.flush()
 
-    print(timestamp() + ' CCBOOST: Computing all eigenvectors of Hessian...')
+    print(timestamp() + ' Computing all eigenvectors of Hessian...')
     sys.stdout.flush()
     o = '{}/hessOrient-s3.5-allEigVecs{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} 3.5 1.0 {} 1'.format(bin_loc, allEigVecHess, data, o)
@@ -168,7 +172,7 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
         print('Skipping: "{}"'.format(s))
     sys.stdout.flush()
 
-    print(timestamp() + ' CCBOOST: Repolarizing orientation...')
+    print(timestamp() + ' Repolarizing orientation...')
     sys.stdout.flush()
     o = '{}/hessOrient-s3.5-repolarized{}.nrrd'.format(output_folder, suffix)
     s = '{}/{} {} {}/hessOrient-s3.5-allEigVecs{}.nrrd 3.5 1.0 {}'.format(bin_loc, repolarizeOrient, data, output_folder, suffix, o)
@@ -181,7 +185,7 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
     sys.stdout.flush()
 
     for sigma in [1.0, 1.6, 3.5, 5.0]:
-        print(timestamp() + ' CCBOOST: Computing gradients (s={0:.1f})...'.format(sigma))
+        print(timestamp() + ' Computing gradients (s={0:.1f})...'.format(sigma))
         sys.stdout.flush()
         str_sigma = '{0:.2f}'.format(sigma)
         o = '{}/gradient-magnitude-s{}{}.nrrd'.format(output_folder, str_sigma, suffix)
@@ -248,12 +252,12 @@ def dilate_labels(data, dilation, dims=2):
         if dilation[0] == 0:
             inner.fill(False)
         else:
-            inner = (data > 128) - inner
+            inner = (data > 128) ^ inner
 
         if dilation[1] == 0:
             outer.fill(False)
         else:
-            outer = outer - (data > 128)
+            outer = outer ^ (data > 128)
 
         # Copy
         dilated = data.copy()
