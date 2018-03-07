@@ -173,6 +173,10 @@ feats = [
     "stensor-s2.5-r5.0{}.nrrd".format(suffix)
 ]
 if is_train:
+    # Store the number of stumps in the model
+    with open(folder_results + '/out/stumps.txt', 'w') as f:
+        f.write(str(config['num_adaboost_stumps']))
+
     # Open template
     with open(dir_path + '/templates/train.cfg', 'r') as f:
         template = f.read()
@@ -191,12 +195,21 @@ if is_train:
     if template.find('VAR_') >= 0:
         raise RuntimeError('Some field was not filled in in the template? ' + template)
 else:
+    # Retrieve the number of stumps in the model
+    try:
+        with open(folder_results + '/out/stumps.txt', 'r') as f:
+            num_stumps = int(f.read().strip())
+        print(timestamp() + ' Using trained model with {} stumps'.format(num_stumps))
+    except:
+        num_stumps = 2000
+        print(timestamp() + 'Could not read number of stumps: using {} per default'.format(num_stumps))
+    
     # Open template
     with open(dir_path + '/templates/test.cfg', 'r') as f:
         template = f.read()
 
     # Replace variables
-    template = template.replace('VAR_NUM_STUMPS', '{}'.format(str(config['num_adaboost_stumps'])))
+    template = template.replace('VAR_NUM_STUMPS', '{}'.format(str(num_stumps)))
     template = template.replace('VAR_OUTPUT_PREFIX', '"' + folder_results + '/out"')
     template = template.replace('VAR_MODEL', '"' + folder_model + '/stumps.cfg"')
     template = template.replace('VAR_DATA', '"' + stack + '"')

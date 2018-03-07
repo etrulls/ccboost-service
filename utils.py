@@ -86,12 +86,12 @@ def compute_synapse_features(data, output_folder, mirrored, force_recompute=Fals
     else:
         suffix = ''
 
-    bin_loc = dir_path = os.path.dirname(
+    bin_loc = os.path.dirname(
         os.path.realpath(__file__)) + "/ccboost-v0.21/build"
-    gaussBin = 'GaussianImageFilter'
+    # gaussBin = 'GaussianImageFilter'
     gradBin = 'GradientMagnitudeImageFilter'
-    LoGBin = 'LoGImageFilter'
-    eigOfHessBin = 'EigenOfHessianImageFilter' 
+    # LoGBin = 'LoGImageFilter'
+    # eigOfHessBin = 'EigenOfHessianImageFilter' 
     eigOfST = 'EigenOfStructureTensorImageFilter'
     singleEigVecHess = 'SingleEigenVectorOfHessian'
     allEigVecHess = 'AllEigenVectorsOfHessian'
