@@ -90,7 +90,7 @@ if is_train:
 # Mirror training stack and labels to avoid boundary issues
 # Will be deleted at the end of the run, but it should not be displayed to the user (h5 only)
 if config['mirror'] > 0:
-    print(timestamp() + ' Dilating stacks and labels')
+    print(timestamp() + ' Mirroring stacks and labels')
     print(timestamp() + ' Source data file: {}'.format(stack))
     sys.stdout.flush()
     s = stack.split('/')
@@ -134,11 +134,12 @@ if config['mirror'] > 0:
 # Ignore pixels around annotations
 if is_train:
     if sum(config['ignore']) > 0:
+        print(timestamp() + ' Dilating labels')
         s = labels.split('/')
         fn_file = s[-1]
         fn_base = '.'.join(fn_file.split('.')[0:-1])
         fn_ext = fn_file.split('.')[-1]
-        labels_d = '{}/{}-ignore-{}-{}.{}'.format(scratch, fn_base, config['ignore'][0], config['ignore'][0], fn_ext)
+        labels_d = '{}/{}-ignore-{}-{}.{}'.format(scratch, fn_base, config['ignore'][0], config['ignore'][1], fn_ext)
         x = tifffile.imread(labels)
         x = dilate_labels(x, config['ignore'])
         tifffile.imsave(labels_d, x)
@@ -174,7 +175,7 @@ feats = [
 ]
 if is_train:
     # Store the number of stumps in the model
-    with open(folder_results + '/out/stumps.txt', 'w') as f:
+    with open(folder_model + '/num_stumps.txt', 'w') as f:
         f.write(str(config['num_adaboost_stumps']))
 
     # Open template
@@ -197,12 +198,12 @@ if is_train:
 else:
     # Retrieve the number of stumps in the model
     try:
-        with open(folder_results + '/out/stumps.txt', 'r') as f:
+        with open(folder_model + '/num_stumps.txt', 'r') as f:
             num_stumps = int(f.read().strip())
         print(timestamp() + ' Using trained model with {} stumps'.format(num_stumps))
     except:
         num_stumps = 2000
-        print(timestamp() + 'Could not read number of stumps: using {} per default'.format(num_stumps))
+        print(timestamp() + ' Could not read number of stumps: using {} per default'.format(num_stumps))
     
     # Open template
     with open(dir_path + '/templates/test.cfg', 'r') as f:
