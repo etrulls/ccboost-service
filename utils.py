@@ -211,7 +211,8 @@ def dilate_labels(data, dilation, dims=2):
         return data
     else:
         # Get current mask
-        mask = data == 128
+        # Everything except 0 (bg) and 255 (fg) is ignored)
+        mask = (data > 0) & (data < 255)
 
         # Rank: number of dimensions
         # Connectivity -> 1: conn-4, 2: conn-8, 3: all on for 3D filters
@@ -222,26 +223,26 @@ def dilate_labels(data, dilation, dims=2):
         if dims == 2:
             for i in range(data.shape[0]):
                 inner[i] = ndimage.binary_erosion(
-                    data[i] > 128,
+                    data[i] == 255,
                     structure=filt,
                     iterations=dilation[0],
                     border_value=True,
                 )
                 outer[i] = ndimage.binary_dilation(
-                    data[i] > 128,
+                    data[i] == 255,
                     structure=filt,
                     iterations=dilation[1],
                     border_value=False,
                 )
         elif dims ==3:
             inner = ndimage.binary_erosion(
-                data > 128,
+                data == 255,
                 structure=filt,
                 iterations=dilation[0],
                 border_value=True,
             )
             outer = ndimage.binary_dilation(
-                data > 128,
+                data == 255,
                 structure=filt,
                 iterations=dilation[1],
                 border_value=False,
@@ -252,21 +253,21 @@ def dilate_labels(data, dilation, dims=2):
         if dilation[0] == 0:
             inner.fill(False)
         else:
-            inner = (data > 128) ^ inner
+            inner = (data == 255) ^ inner
 
         if dilation[1] == 0:
             outer.fill(False)
         else:
-            outer = outer ^ (data > 128)
+            outer = outer ^ (data == 255)
 
         # Copy
         dilated = data.copy()
 
+        # Assign dilated positives
+        dilated[inner + outer] = 128
+
         # Re-apply original mask
         dilated[mask] = 128
-
-        # Assign dilated positives
-        dilated[inner + outer] = 255
 
         return dilated
 
