@@ -1,4 +1,4 @@
-# Remote 
+# Remote CCBoost service for Ilastik
 
 This repository contains the a module wrapping the binaries for segmentation of
 synapses and mitocondria with context cues with
