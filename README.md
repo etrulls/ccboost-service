@@ -20,3 +20,5 @@ EPFL](https://cvlab.epfl.ch) within the context of the Human Brain Project.
 This repository is designed to be placed or symlinked inside the remote server
 folder. A (possibly overtuned) list of requirements is given in `reqs.txt`, for
 reference.
+
+![Teaser](https://raw.githubusercontent.com/etrulls/ccboost-service/master/img/teaser_ccboost.png "Teaser")
